@@ -8,6 +8,8 @@ const path = require('path');
 // @route   POST /api/publicaciones
 // @access  Privado
 const crearPublicacion = asyncHandler(async (req, res) => {
+    console.log("Datos de texto recibidos (req.body):", req.body);
+    console.log("Objeto de archivo recibido (req.file):", req.file);
     const { texto, puntosOtorgados = 10 } = req.body; 
 
     if (!texto) {
