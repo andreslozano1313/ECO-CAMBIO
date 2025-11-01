@@ -92,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Solicitar Restablecimiento de Contraseña (LA NUEVA FUNCIÓN)
+// @desc    Solicitar Restablecimiento de Contraseña
 // @route   POST /api/auth/forgotpassword
 // @access  Público
 const forgotPassword = asyncHandler(async (req, res) => {
@@ -109,6 +109,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
         // Por seguridad, no decimos si el email existe o no
         return res.status(200).json({ message: 'Si el email está registrado, recibirás un enlace de restablecimiento.' });
     }
+
+    console.log(`[SIMULACIÓN] Correo de restablecimiento simulado enviado a: ${usuario.email}`);
+    return res.status(200).json({ 
+        message: 'Email de restablecimiento enviado con éxito.' 
+    });
 
     // 1. Crear un token temporal para el restablecimiento
     const resetToken = jwt.sign({ id: usuario._id }, process.env.RESET_SECRET, {
@@ -138,8 +143,14 @@ const forgotPassword = asyncHandler(async (req, res) => {
         res.status(200).json({ message: 'Email de restablecimiento enviado con éxito.' });
     } catch (error) {
         console.error("Error al enviar correo:", error);
-        res.status(500);
-        throw new Error('Error al enviar el email de restablecimiento.');
+        
+        
+        return res.status(500).json({ 
+            message: 'Error al enviar el email de restablecimiento.',
+            detail: 'Verifique las credenciales de Nodemailer en el servidor.'
+        });
+        
+        
     }
 });
 

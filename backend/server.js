@@ -40,3 +40,6 @@ app.use('/api/publicaciones', require('./routes/publicacionRoutes'));
 app.use(errorHandler);
 
 app.listen(port, () => console.log(`Server started on port ${port}`));
+
+// Rutas de Productos (Marketplace)
+app.use('/api/productos', require('./routes/productoRoutes'));

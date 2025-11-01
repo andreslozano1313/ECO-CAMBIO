@@ -1,105 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Swal from 'sweetalert2'; 
 import styled from 'styled-components';
-
+import Comentarios from './Comentarios'; // Componente de Comentarios (Importación existente)
 
 const API_URL = 'http://localhost:5000/api/publicaciones';
 
-// 1. Definición de las Columnas para la DataTable
-const columns = [
-    {
-        name: 'Autor',
-        selector: row => row.autor.nombres,
-        sortable: true,
-    },
-    {
-        name: 'Acción Ecológica',
-        selector: row => row.texto,
-        sortable: false,
-        wrap: true, 
-    },
-    {
-        name: 'Puntos',
-        selector: row => row.puntosOtorgados,
-        sortable: true,
-    },
-    {
-        name: 'Fecha',
-        selector: row => new Date(row.createdAt).toLocaleDateString(),
-        sortable: true,
-    },
-    {
-        name: 'Acciones',
-        cell: row => (
-            <button 
-                onClick={() => handleDelete(row._id)} //función de SweetAlert/Eliminar
-                className="btn btn-danger btn-sm" 
-            >
-                Eliminar
-            </button>
-        ),
-        ignoreRowClick: true,
-        allowOverflow: true,
-        button: true,
-    },
-];
-
-const handleDelete = async (id) => {
-    // SweetAlert para confirmar la acción Punto de Evaluación
-    const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: "¡No podrás revertir esta acción!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, eliminar!'
-    });
-
-    if (result.isConfirmed) {
-        // Lógica de eliminación...
-        Swal.fire(
-            '¡Eliminado!',
-            'La publicación ha sido eliminada.',
-            'success'
-        );
-        
-    }
-};
-
-
 const PublicacionesList = () => {
     const [publicaciones, setPublicaciones] = useState([]);
+    const [comentarioActivoId, setComentarioActivoId] = useState(null); // <-- Estado para el Comentario Activo
     const [loading, setLoading] = useState(true);
 
-    const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZmFjMTM2MjUzMDY2MDgxYTk1OWI1ZiIsImlhdCI6MTc2MTI2MzkyNiwiZXhwIjoxNzYzODU1OTI2fQ.eHvQ7YKsqARzCyA1PvWrxXccbpURo3zDxOE061_KqFw'; 
+    const REAL_TOKEN = localStorage.getItem('userToken'); 
     
-    // 2. Función para Consumir la API
-    const fetchPublicaciones = async () => {
+    // Función para obtener la configuración de Headers
+    const getConfig = () => ({
+        headers: {
+            Authorization: `Bearer ${REAL_TOKEN}`,
+        },
+    });
+
+
+    // FUNCIÓN PARA CONSUMIR LA API
+    const fetchPublicaciones = useCallback(async () => {
+        if (!REAL_TOKEN) {
+            setLoading(false);
+            Swal.fire('Error', 'Debe iniciar sesión para ver las publicaciones.', 'error');
+            return;
+        }
+
         try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${MOCK_TOKEN}`, // Enviamos el token para pasar el 'protect'
-                },
-            };
-            const response = await axios.get(API_URL, config);
+            const response = await axios.get(API_URL, getConfig());
             setPublicaciones(response.data);
             setLoading(false);
         } catch (error) {
             console.error("Error al obtener las publicaciones:", error);
-            // Uso básico de SweetAlert para manejar errores de API 
+            setLoading(false);
             Swal.fire(
                 'Error de API',
-                'No se pudieron cargar las publicaciones. ¿Está el backend corriendo?',
+                error.response?.data?.message || 'No se pudieron cargar las publicaciones. ¿Backend corriendo?',
                 'error'
             );
-            setLoading(false);
         }
-    };
+    }, [REAL_TOKEN]);
 
-    // 1. FUNCIÓN PARA ELIMINAR
+
+    // FUNCIÓN PARA ELIMINAR
     const handleDelete = async (id) => {
         const result = await Swal.fire({
             title: '¿Estás seguro?',
@@ -113,30 +60,18 @@ const PublicacionesList = () => {
 
         if (result.isConfirmed) {
             try {
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${MOCK_TOKEN}`,
-                    },
-                };
+                await axios.delete(`${API_URL}/${id}`, getConfig()); 
 
-                // Llama a la API DELETE del backend
-                await axios.delete(`${API_URL}/${id}`, config); 
-
-                // Muestra SweetAlert de éxito
                 Swal.fire(
                     '¡Eliminado!',
                     'La publicación ha sido eliminada.',
                     'success'
                 );
                 
-                // Opción 1 (Recomendada): Recarga la lista de publicaciones
                 fetchPublicaciones(); 
-                
 
             } catch (error) {
                 console.error("Error al eliminar la publicación:", error);
-                
-                // Manejo de errores de API con SweetAlert
                 const errorMessage = error.response?.data?.message || 'Error desconocido al eliminar.';
                 Swal.fire(
                     'Error',
@@ -147,13 +82,35 @@ const PublicacionesList = () => {
         }
     };
     
+
+    // DEFINICIÓN DE COLUMNAS (Añadimos la columna de Comentarios)
     const columns = [
+        { name: 'Autor', selector: row => row.autor.nombres, sortable: true },
+        { name: 'Acción Ecológica', selector: row => row.texto, sortable: false, wrap: true },
+        { name: 'Puntos', selector: row => row.puntosOtorgados, sortable: true },
+        { name: 'Fecha', selector: row => new Date(row.createdAt).toLocaleDateString(), sortable: true },
+        // <-- NUEVA COLUMNA PARA COMENTARIOS (HU 3.2)
+        {
+            name: 'Interacción',
+            cell: row => (
+                <button 
+                    // Al hacer clic, alterna el ID del comentario activo. Si es el mismo, lo oculta (null).
+                    onClick={() => setComentarioActivoId(comentarioActivoId === row._id ? null : row._id)} 
+                    style={{ padding: '5px 10px', backgroundColor: '#337ab7', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                    {comentarioActivoId === row._id ? 'Ocultar Comentarios' : 'Ver Comentarios'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            allowOverflow: true,
+            button: true,
+        },
+        // -->
         {
             name: 'Acciones',
             cell: row => (
                 <button 
                     onClick={() => handleDelete(row._id)} 
-                    
                     style={{ 
                         backgroundColor: '#dc3545', color: 'white', border: 'none', 
                         padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' 
@@ -169,14 +126,19 @@ const PublicacionesList = () => {
     ];
 
 
-    // Efecto para cargar los datos al montar el componente
+    // EFECTO PARA CARGAR DATOS
     useEffect(() => {
         fetchPublicaciones();
-    }, []);
+    }, [fetchPublicaciones]);
 
     if (loading) {
         return <div>Cargando publicaciones...</div>;
     }
+
+    if (!REAL_TOKEN) {
+        return <div>Por favor, inicia sesión para ver el feed.</div>;
+    }
+
 
     return (
         <div style={{ padding: '20px' }}>
@@ -190,6 +152,11 @@ const PublicacionesList = () => {
                 pointerOnHover
                 responsive
             />
+            
+            {/* INTEGRACIÓN FINAL: Muestra el componente de Comentarios si hay un ID activo */}
+            {comentarioActivoId && (
+                <Comentarios publicacionId={comentarioActivoId} /> 
+            )}
         </div>
     );
 };
