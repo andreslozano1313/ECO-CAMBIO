@@ -156,4 +156,5 @@ module.exports = {
     getPublicaciones,
     eliminarPublicacion,
     actualizarPublicacion,
+    getPublicaciones
 };

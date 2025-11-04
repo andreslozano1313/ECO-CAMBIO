@@ -2,10 +2,11 @@ const mongoose = require('mongoose');
 
 const comentarioSchema = mongoose.Schema(
     {
-        publicacion: {
+        
+        producto: { 
             type: mongoose.Schema.Types.ObjectId,
             required: true,
-            ref: 'Publicacion', 
+            ref: 'Producto', 
         },
         autor: {
             type: mongoose.Schema.Types.ObjectId,

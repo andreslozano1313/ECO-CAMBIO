@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L from 'leaflet'; // Para acceder al ícono por defecto
-import { useNavigate } from 'react-router-dom'; // Para redireccionar (si estuviera enrutado)
+import L from 'leaflet'; 
+import { useNavigate } from 'react-router-dom';
 
 // Icono por defecto (necesario en react-leaflet)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -19,10 +19,9 @@ const API_URL = 'http://localhost:5000/api/reportes';
 const LocationMarker = ({ setLocation }) => {
     const map = useMapEvents({
         click(e) {
-            // Al hacer clic, actualiza la ubicación
             const { lat, lng } = e.latlng;
             setLocation({ lat, lng });
-            map.flyTo(e.latlng, map.getZoom()); // Centra el mapa
+            map.flyTo(e.latlng, map.getZoom());
         },
     });
 
@@ -35,8 +34,8 @@ const ReporteForm = () => {
     const [archivo, setArchivo] = useState(null);
     const [location, setLocation] = useState(null); // {lat, lng}
     
-    // IMPORTANTE: REEMPLAZA ESTO CON UN TOKEN VÁLIDO
-    const MOCK_TOKEN = 'TU_TOKEN_JWT_DE_PRUEBA'; 
+    const REAL_TOKEN = localStorage.getItem('userToken'); 
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -45,20 +44,23 @@ const ReporteForm = () => {
             Swal.fire('Error', 'Debes ingresar una descripción y marcar la ubicación en el mapa.', 'warning');
             return;
         }
+        if (!REAL_TOKEN) {
+            navigate('/login');
+            return;
+        }
 
         const formData = new FormData();
         formData.append('descripcion', descripcion);
         formData.append('latitud', location.lat);
         formData.append('longitud', location.lng);
         if (archivo) {
-            formData.append('foto', archivo); // Clave 'foto' debe coincidir con Multer
+            formData.append('foto', archivo);
         }
 
         try {
             const config = {
                 headers: {
-                    'Authorization': `Bearer ${MOCK_TOKEN}`,
-                    // El header 'Content-Type': 'multipart/form-data' es establecido automáticamente por FormData
+                    'Authorization': `Bearer ${REAL_TOKEN}`,
                 },
             };
             
@@ -84,74 +86,197 @@ const ReporteForm = () => {
             );
         }
     };
+    
 
     return (
-        <div style={{ maxWidth: '800px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-            <h2>Reporte Ciudadano: Problema Ambiental</h2>
-            <p>Haz clic en el mapa para marcar la ubicación exacta del problema.</p>
-            
-            {/* Contenedor del Mapa */}
-            <div className="map-container">
-                <MapContainer 
-                    center={[6.2442, -75.5812]} // Coordenadas de ejemplo (Medellín)
-                    zoom={13} 
-                    scrollWheelZoom={false}
-                    style={{ height: '100%', width: '100%' }}
-                >
-                    <TileLayer
-                        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    
-                    {/* Componente para manejar el clic y actualizar el estado */}
-                    <LocationMarker setLocation={setLocation} />
-
-                    {/* Marcador en la ubicación seleccionada */}
-                    {location && (
-                        <Marker position={[location.lat, location.lng]} />
-                    )}
-                </MapContainer>
-            </div>
-            
-            {/* Formulario */}
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '10px' }}>
-                    <label>Ubicación Seleccionada:</label>
-                    <input 
-                        type="text" 
-                        value={location ? `Lat: ${location.lat.toFixed(4)}, Lng: ${location.lng.toFixed(4)}` : 'Haz clic en el mapa...'} 
-                        readOnly 
-                        style={{ width: '100%', padding: '8px' }}
-                    />
+        <div style={styles.pageContainer}>
+            <div style={styles.card}>
+                
+                {/* ENCABEZADO */}
+                <div style={styles.header}>
+                    <img src="/LOGO.jpeg" alt="Eco-Cambio Logo" style={styles.logo} />  
+                    <h2 style={styles.title}>Reporte Ciudadano</h2>
+                    <p style={styles.subtitle}>Marca la ubicación y describe un problema ambiental en tu comunidad.</p>
                 </div>
                 
-                <div style={{ marginBottom: '10px' }}>
-                    <label htmlFor="descripcion">Descripción del Problema:</label>
+                <form onSubmit={handleSubmit} style={styles.form}>
+                    
+                    {/* MAPA */}
+                    <div style={styles.mapTitle}>1. Ubicación del Problema:</div>
+                    <div style={styles.mapContainer}>
+                        <MapContainer 
+                            center={[6.2442, -75.5812]} // Coordenadas de ejemplo
+                            zoom={13} 
+                            scrollWheelZoom={false}
+                            style={styles.map}
+                        >
+                            <TileLayer
+                                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            
+                            <LocationMarker setLocation={setLocation} />
+
+                            {location && (
+                                <Marker position={[location.lat, location.lng]} />
+                            )}
+                        </MapContainer>
+                    </div>
+                    
+                    {/* COORDENADAS */}
+                    <div style={styles.coordDisplay}>
+                        <label>Coordenadas:</label>
+                        <input 
+                            type="text" 
+                            value={location ? `Lat: ${location.lat.toFixed(6)}, Lng: ${location.lng.toFixed(6)}` : 'Haz clic en el mapa para seleccionar...'} 
+                            readOnly 
+                            style={styles.coordInput}
+                        />
+                    </div>
+                    
+                    {/* DESCRIPCIÓN */}
+                    <label htmlFor="descripcion" style={styles.label}>2. Descripción Detallada:</label>
                     <textarea
                         id="descripcion"
                         value={descripcion}
                         onChange={(e) => setDescripcion(e.target.value)}
+                        placeholder="Ejemplo: Vertido de escombros y basura en la quebrada."
                         required
                         rows="4"
-                        style={{ width: '100%', padding: '8px' }}
+                        style={styles.textarea}
                     />
-                </div>
-                
-                <div style={{ marginBottom: '20px' }}>
-                    <label htmlFor="foto">Adjuntar Foto (Opcional):</label>
+                    
+                    {/* FOTO */}
+                    <label htmlFor="foto" style={styles.label}>3. Adjuntar Foto (Opcional):</label>
                     <input 
                         type="file" 
                         id="foto"
                         onChange={(e) => setArchivo(e.target.files[0])}
+                        style={styles.fileInput}
                     />
-                </div>
                 
-                <button type="submit" style={{ padding: '10px 15px', backgroundColor: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>
-                    Enviar Reporte
-                </button>
-            </form>
+                    <button type="submit" style={styles.button}>
+                        Enviar Reporte
+                    </button>
+                </form>
+
+            </div>
         </div>
     );
+};
+
+// --- Estilos Consistentes ---
+const styles = {
+    pageContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        minHeight: '100vh',
+        backgroundColor: '#f0f2f5', 
+        padding: '40px 0',
+    },
+    card: {
+        width: '100%',
+        maxWidth: '800px', 
+        padding: '40px',
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)', 
+        textAlign: 'center',
+    },
+    header: {
+        marginBottom: '30px',
+    },
+    logo: {
+        width: '60px',
+        height: '60px',
+        marginBottom: '10px',
+        borderRadius: '50%', 
+        objectFit: 'cover',
+    },
+    title: {
+        fontSize: '28px',
+        color: '#333',
+        margin: '0',
+    },
+    subtitle: {
+        fontSize: '16px',
+        color: '#666',
+        marginTop: '5px',
+        marginBottom: '20px',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        textAlign: 'left',
+    },
+    // MAPA
+    mapTitle: {
+        fontSize: '1.2em',
+        fontWeight: 'bold',
+        marginBottom: '10px',
+        color: '#333',
+        borderBottom: '1px solid #eee',
+        paddingBottom: '5px',
+    },
+    mapContainer: {
+        height: '350px', 
+        width: '100%',
+        marginBottom: '20px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 1px 5px rgba(0,0,0,0.1)',
+    },
+    map: {
+        height: '100%',
+        width: '100%',
+    },
+    // INPUTS
+    label: {
+        marginBottom: '5px',
+        fontSize: '15px',
+        color: '#555',
+        fontWeight: 'bold',
+        display: 'block',
+    },
+    textarea: {
+        marginBottom: '20px',
+        padding: '12px',
+        borderRadius: '8px',
+        border: '1px solid #ddd',
+        fontSize: '16px',
+        resize: 'vertical',
+    },
+    fileInput: {
+        marginBottom: '20px',
+        padding: '12px 0',
+    },
+    coordDisplay: {
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: '20px',
+        gap: '10px',
+    },
+    coordInput: {
+        flexGrow: 1,
+        padding: '10px',
+        borderRadius: '8px',
+        border: '1px solid #ddd',
+        fontSize: '16px',
+        backgroundColor: '#f9f9f9',
+    },
+    button: {
+        padding: '15px',
+        backgroundColor: '#f0ad4e', // Color de Alerta/Reporte
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        marginTop: '10px',
+        transition: 'background-color 0.3s',
+    },
 };
 
 export default ReporteForm;

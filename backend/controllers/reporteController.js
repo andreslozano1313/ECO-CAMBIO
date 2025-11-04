@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Reporte = require('../models/Reporte');
-const upload = require('../config/multerConfig'); // Reutilizamos el middleware de Multer
+const fs = require('fs'); // <-- NECESARIO: Módulo para eliminar archivos
+// const upload = require('../config/multerConfig'); // No es necesario importarlo aquí
 
 // @desc    Crear un nuevo reporte ciudadano con ubicación
 // @route   POST /api/reportes
@@ -37,15 +38,51 @@ const crearReporte = asyncHandler(async (req, res) => {
 // @route   GET /api/reportes
 // @access  Privado
 const getReportes = asyncHandler(async (req, res) => {
-    // Para simplificar, obtenemos todos los reportes.
-    // En una aplicación real, se usaría una consulta $near de MongoDB para filtrar por proximidad.
     const reportes = await Reporte.find({})
         .populate('autor', 'nombres'); 
         
     res.status(200).json(reportes);
 });
 
+// @desc    Eliminar un reporte ciudadano (Marcar como Resuelto)
+// @route   DELETE /api/reportes/:id
+// @access  Privado (Solo el autor)
+const eliminarReporte = asyncHandler(async (req, res) => {
+    const reporte = await Reporte.findById(req.params.id);
+
+    if (!reporte) {
+        res.status(404);
+        throw new Error('Reporte no encontrado.');
+    }
+
+    // 1. Verificar la Autoría (Seguridad)
+    // El ID del autor en el reporte (ObjectId) debe coincidir con el ID del usuario logueado (String)
+    if (reporte.autor.toString() !== req.usuario.id) {
+        res.status(401);
+        throw new Error('Usuario no autorizado para eliminar este reporte.');
+    }
+
+    // 2. Eliminar la Imagen del Servidor (si existe)
+    if (reporte.urlFoto) {
+        // fs.unlink(path) elimina el archivo del disco
+        fs.unlink(reporte.urlFoto, (err) => {
+            if (err) console.error("Error al eliminar la imagen del reporte:", err);
+            // El reporte se elimina de la DB aunque la imagen falle en el disco.
+        });
+    }
+
+    // 3. Eliminar el Reporte de la Base de Datos
+    await reporte.deleteOne();
+
+    res.status(200).json({ 
+        id: req.params.id, 
+        message: 'Reporte eliminado y problema marcado como resuelto.' 
+    });
+});
+
+
 module.exports = {
     crearReporte,
     getReportes,
+    eliminarReporte, // <-- ¡NUEVA FUNCIÓN EXPORTADA!
 };
