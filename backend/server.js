@@ -25,7 +25,9 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use('/uploads', express.static('uploads'));
 app.use('/api/reportes', require('./routes/reporteRoutes'));
-app.use('/api/transacciones', require('./routes/transaccionRoutes'));
+/*app.use('/api/transacciones', require('./routes/transaccionRoutes'));*/
+app.use('/api/mensajes', require('./routes/mensajeRoutes'));
+app.use('/api/notificaciones', require('./routes/notificacionRoutes'));
 
 // 1. ruta para autenticacion
 app.use('/api/auth', require('./routes/authRoutes'));

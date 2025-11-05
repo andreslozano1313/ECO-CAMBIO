@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { useNavigate } from 'react-router-dom'; // Asegúrate de que useNavigate esté importado
+import { useNavigate } from 'react-router-dom';
 import Comentarios from './Comentarios'; 
 
 const API_URL = 'http://localhost:5000/api/productos';
+const MENSAJE_API_URL = 'http://localhost:5000/api/mensajes'; // <-- Nueva URL para la mensajería
 
 const MarketplaceList = () => {
     const [productos, setProductos] = useState([]);
@@ -13,18 +14,17 @@ const MarketplaceList = () => {
     const [comentarioProductoId, setComentarioProductoId] = useState(null); 
     
     const REAL_TOKEN = localStorage.getItem('userToken');
-    const navigate = useNavigate(); // <-- Instancia de useNavigate
+    const navigate = useNavigate(); 
 
-    // ... (Funciones getConfig, fetchProductos, handleTransaction, useEffect, etc. permanecen iguales) ...
-    // ...
+    // Obtener ID del usuario autenticado de forma simple para la UI (Necesario para la lógica de no comprarse a sí mismo)
+    const loggedInUserId = REAL_TOKEN ? JSON.parse(atob(REAL_TOKEN.split('.')[1])).id : null; 
 
-    // Función para obtener la configuración de Headers
     const getConfig = useCallback(() => ({
         headers: { Authorization: `Bearer ${REAL_TOKEN}` },
         params: { q: searchTerm } 
     }), [REAL_TOKEN, searchTerm]); 
 
-    // Función para Consumir la API
+    // Función para Consumir la API (Permanece igual)
     const fetchProductos = useCallback(async () => {
         if (!REAL_TOKEN) {
             navigate('/login');
@@ -42,19 +42,60 @@ const MarketplaceList = () => {
         }
     }, [REAL_TOKEN, navigate, getConfig]);
 
+    // 1. FUNCIÓN handleTransaction MODIFICADA A MENSAJERÍA DE INTERÉS
     const handleTransaction = (producto) => {
+        // Validación de no enviarse mensaje a sí mismo
+        if (producto.ID_Usuario._id === loggedInUserId) {
+            Swal.fire('Error', 'No puedes enviarte un mensaje de interés en tu propio artículo.', 'warning');
+            return;
+        }
+
         Swal.fire({
-            title: `Confirmar ${producto.Tipo}`,
-            text: `¿Deseas proceder con la ${producto.Tipo} de ${producto.Nombre_Producto} por ${producto.Tipo === 'Venta' ? `$${producto.Precio.toFixed(2)}` : '0 (Donación)'}?`,
-            icon: producto.Tipo === 'Venta' ? 'question' : 'info',
+            title: `Mensaje de Interés en ${producto.Nombre_Producto}`,
+            html: `
+                <p style="text-align: left;">Estás a punto de enviar un mensaje privado al vendedor para coordinar la entrega o compra. El vendedor recibirá una alerta.</p>
+                <textarea id="swal-input-mensaje" placeholder="Escribe tu mensaje interno para coordinar (Ej: ¿Podríamos vernos el sábado?)..." 
+                maxlength="200" style="width: 100%; height: 100px; padding: 10px; resize: vertical; border-radius: 6px;"></textarea>
+            `,
+            focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: 'Sí, continuar',
-        }).then((result) => {
+            confirmButtonText: `Enviar Interés`,
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const mensaje = document.getElementById('swal-input-mensaje').value;
+                if (!mensaje.trim()) {
+                    Swal.showValidationMessage('El mensaje no puede estar vacío.');
+                }
+                return mensaje;
+            }
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                Swal.fire('Procesando', 'Simulando transacción... Implementar la lógica completa en el componente Transacciones.', 'info');
+                const mensajeContenido = result.value;
+                
+                try {
+                    const data = {
+                        productoId: producto._id,
+                        contenido: mensajeContenido,
+                        // El tipoMensaje se determina en el backend, pero lo enviamos como parte de la data
+                        tipoMensaje: producto.Tipo === 'Venta' ? 'INTERES_COMPRA' : 'INTERES_DONACION' 
+                    };
+                    
+                    // Llamada a la API de Mensajería
+                    await axios.post(MENSAJE_API_URL, data, getConfig()); 
+
+                    Swal.fire({
+                        title: '¡Mensaje Enviado!',
+                        text: `Tu mensaje interno ha sido enviado. El vendedor ha sido notificado y se comunicará contigo.`,
+                        icon: 'success'
+                    });
+
+                } catch (error) {
+                    Swal.fire('Error', error.response?.data?.message || 'Fallo al enviar el mensaje de interés. Asegúrate de tener un usuario logueado.', 'error');
+                }
             }
         });
-    };
+    }; // FIN handleTransaction
+
 
     useEffect(() => {
         fetchProductos();
@@ -74,7 +115,9 @@ const MarketplaceList = () => {
     return (
         <div style={styles.pageContainer}>
             
-            {/* BARRA DE BÚSQUEDA */}
+            {/* BARRA DE BÚSQUEDA Y OTROS ELEMENTOS DE RENDERIZADO (sin cambios) */}
+            {/* ... */}
+            
             <form onSubmit={handleSearchClick} style={styles.searchBar}>
                 <input
                     type="text"
@@ -97,9 +140,10 @@ const MarketplaceList = () => {
                         {/* IMAGEN DEL PRODUCTO (AÑADIR onClick para Navegación) */}
                         <div 
                             style={styles.imageWrapper}
-                            onClick={() => navigate(`/productos/${producto._id}`)} // <-- REDIRECCIÓN AL HACER CLIC
+                            onClick={() => navigate(`/productos/${producto._id}`)}
                         >
-                             {producto.Foto_Producto ? (
+                            {/* ... (Imagen o placeholder) ... */}
+                            {producto.Foto_Producto ? (
                                 <img 
                                     src={`http://localhost:5000/${producto.Foto_Producto}`} 
                                     alt={producto.Nombre_Producto} 
@@ -111,20 +155,10 @@ const MarketplaceList = () => {
                         </div>
 
                         <div style={styles.cardBody}>
-                            {/* NOMBRE DEL PRODUCTO */}
+                            {/* ... (Nombre, Ubicación, Precio, Insignias) ... */}
                             <h3 style={styles.cardTitle}>{producto.Nombre_Producto}</h3>
-                            
-                            {/* UBICACIÓN */}
-                            <p style={styles.locationText}>
-                                📍 {producto.Ubicacion}
-                            </p>
-
-                            {/* PRECIO O DONACIÓN */}
-                            <p style={styles.cardPrice}>
-                                {producto.Tipo === 'Venta' ? `$${producto.Precio.toFixed(2)}` : '¡DONACIÓN GRATIS!'}
-                            </p>
-
-                            {/* INSIGNIAS */}
+                            <p style={styles.locationText}>📍 {producto.Ubicacion}</p>
+                            <p style={styles.cardPrice}>{producto.Tipo === 'Venta' ? `$${producto.Precio.toFixed(2)}` : '¡DONACIÓN GRATIS!'}</p>
                             <div style={styles.badgeGroup}>
                                 <span style={styles.badge}>{producto.Categoria}</span>
                                 <span style={styles.estado}>{producto.Estado}</span>
@@ -138,12 +172,13 @@ const MarketplaceList = () => {
                                 {comentarioProductoId === producto._id ? 'Ocultar Comentarios' : 'Ver Comentarios'}
                             </button>
                             
-                            {/* BOTÓN DE TRANSACCIÓN */}
+                            {/* BOTÓN DE TRANSACCIÓN/MENSAJE (ACTUALIZADO) */}
                             <button 
-                                onClick={() => handleTransaction(producto)} 
+                                onClick={() => handleTransaction(producto)} // <-- Llama a la nueva función de mensajería
                                 style={producto.Tipo === 'Venta' ? styles.buyButton : styles.donateButton}
+                                disabled={producto.ID_Usuario._id === loggedInUserId} // Deshabilita si es propio
                             >
-                                {producto.Tipo === 'Venta' ? 'Comprar Artículo' : 'Solicitar Donación'}
+                                {producto.ID_Usuario._id === loggedInUserId ? 'Tu Artículo' : (producto.Tipo === 'Venta' ? 'Comprar Artículo' : 'Solicitar Donación')}
                             </button>
 
                         </div>

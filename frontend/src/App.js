@@ -1,94 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'; // <-- Asegúrate de importar Link
+import React, { useState, useEffect, useCallback } from 'react'; // <-- Asegúrate de tener useCallback
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'; 
+import axios from 'axios'; // <-- NUEVO: Para consulta de notificaciones
+import Swal from 'sweetalert2';
+
+// --- Importaciones de Componentes ---
 import Login from './components/Login';
 import Register from './components/Register'; 
 import ReporteForm from './components/ReporteForm';
 import CrearProductoForm from './components/CrearProductoForm'; 
 import MarketplaceList from './components/MarketplaceList';
-import Swal from 'sweetalert2';
 import ForgotPassword from './components/ForgotPassword';
 import ProductoDetalle from './components/ProductoDetalle';
 import ReporteMapa from './components/ReporteMapa';
+import BandejaMensajes from './components/BandejaMensajes'; // <-- NUEVO COMPONENTE
+
+const NOTIFICACIONES_API_URL = 'http://localhost:5000/api/notificaciones'; // <-- URL de Notificaciones
 
 // Componente que comprueba si hay un token en localStorage
 const checkAuth = () => {
-    return !!localStorage.getItem('userToken');
+    return !!localStorage.getItem('userToken');
 };
 
 const PrivateRoute = ({ children }) => {
-    const isAuthenticated = checkAuth();
-    return isAuthenticated ? children : <Navigate to="/login" />;
+    const isAuthenticated = checkAuth();
+    return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 
 function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
+    // ESTADO
+    const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
+    const [notifCount, setNotifCount] = useState(0); // <-- NUEVO ESTADO PARA NOTIFICACIONES
 
-    useEffect(() => {
-        setIsAuthenticated(checkAuth());
+    // FUNCIÓN PARA BUSCAR NOTIFICACIONES PENDIENTES
+    const fetchNotificaciones = useCallback(async () => {
+        const REAL_TOKEN = localStorage.getItem('userToken');
+        if (!REAL_TOKEN) return;
+        try {
+            const config = { headers: { Authorization: `Bearer ${REAL_TOKEN}` } };
+            const response = await axios.get(NOTIFICACIONES_API_URL, config); 
+            setNotifCount(response.data.length);
+        } catch (error) {
+            console.error("Fallo al cargar notificaciones:", error);
+            setNotifCount(0);
+        }
     }, []);
-    
-    const handleLogout = () => {
-        localStorage.removeItem('userToken');
-        setIsAuthenticated(false);
-        Swal.fire('Sesión Cerrada', 'Has cerrado tu sesión con éxito.', 'info');
-    };
 
-    // --- Componente de Barra de Navegación (Navbar) CORREGIDO ---
-    const Navbar = () => (
-        <nav style={styles.navbar}>
-            {isAuthenticated && (
-                <>
+    useEffect(() => {
+        setIsAuthenticated(checkAuth());
+        
+        // Lógica de Notificaciones al iniciar sesión
+        if (checkAuth()) {
+            fetchNotificaciones();
+            // Consulta periódica (cada 30 segundos)
+            const interval = setInterval(fetchNotificaciones, 30000); 
+            return () => clearInterval(interval); // Limpiar al desmontar
+        }
+    }, [fetchNotificaciones]); // Dependencia del useCallback
+
+    // Función para manejar el logout
+    const handleLogout = () => {
+        localStorage.removeItem('userToken');
+        setIsAuthenticated(false);
+        Swal.fire('Sesión Cerrada', 'Has cerrado tu sesión con éxito.', 'info');
+    };
+
+    // --- Componente de Barra de Navegación (Navbar) ---
+    const Navbar = () => (
+        <nav style={styles.navbar}>
+            {isAuthenticated && (
+                <>
+                    <Link to="/" style={styles.navLink}>Marketplace</Link>
+                    <Link to="/crear-producto" style={styles.navLink}>Publicar Artículo</Link>
+                    <Link to="/reporte-form" style={styles.navLink}>Enviar Reporte</Link> {/* <-- Cambié /reporte por /reporte-form */}
+                    <Link to="/mapa-incidentes" style={styles.navLink}>Mapa Incidentes 🌍</Link>
                     
-                    <Link to="/" style={styles.navLink}>Marketplace</Link>
-                    <Link to="/crear-producto" style={styles.navLink}>Publicar Artículo</Link>
-                    <Link to="/reporte" style={styles.navLink}>Reporte Ciudadano</Link>
+                    {/* ENLACE A LA BANDEJA DE MENSAJES Y ALERTA VISUAL */}
+                    <Link to="/bandeja-mensajes" style={styles.navLink}>
+                        Mensajes 
+                        {notifCount > 0 && <span style={styles.notifBadge}>{notifCount}</span>} {/* <-- INDICADOR DE NOTIFICACIONES */}
+                    </Link>
+                </>
+            )}
+            
+            <div style={{ marginLeft: 'auto' }}>
+                {isAuthenticated ? (
+                    <button onClick={handleLogout} style={styles.logoutButton}>Cerrar Sesión</button>
+                ) : (
+                    <></> 
+                )}
+            </div>
+        </nav>
+    );
+    // --- Fin Navbar ---
 
 
-                    {/* ENLACE A LA VISTA PÚBLICA DEL MAPA */}
-                    <Link to="/mapa-incidentes" style={styles.navLink}>Mapa Incidentes 🌍</Link>
-                </>
-            )}
-            
-            <div style={{ marginLeft: 'auto' }}>
-                {isAuthenticated ? (
-                    <button onClick={handleLogout} style={styles.logoutButton}>Cerrar Sesión</button>
-                ) : (
-                    // SECCIÓN MODIFICADA: Ahora solo contendrá el espacio vacío
-                    <></> 
-                )}
-            </div>
-        </nav>
-    );
-    // --- Fin Navbar ---
+    return (
+        <Router>
+            <Navbar /> 
 
+            <Routes>
+                {/* Rutas Públicas */}
+                <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+                <Route path="/register" element={<Register />} /> 
+                <Route path="/forgotpassword" element={<ForgotPassword />} />
 
-    return (
-        <Router>
-            {/* INCLUIR LA BARRA DE NAVEGACIÓN AQUÍ */}
-            <Navbar /> 
-
-            <Routes>
-                {/* Rutas Públicas */}
-                <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
-                <Route path="/register" element={<Register />} /> 
-                <Route path="/forgotpassword" element={<ForgotPassword />} />
-
-                {/* Rutas Protegidas (Requieren JWT) */}
+                {/* Rutas Protegidas (Requieren JWT) */}
+                <Route path="/reporte-form" element={<PrivateRoute><ReporteForm /></PrivateRoute>} />
+                <Route path="/crear-producto" element={<PrivateRoute><CrearProductoForm /></PrivateRoute>} />
+                <Route path="/" element={<PrivateRoute><MarketplaceList /></PrivateRoute>} />
+                <Route path="/productos/:id" element={<PrivateRoute><ProductoDetalle /></PrivateRoute>} />
                 
-                <Route path="/reporte" element={<PrivateRoute><ReporteForm /></PrivateRoute>} />
-                <Route path="/crear-producto" element={<PrivateRoute><CrearProductoForm /></PrivateRoute>} />
-                <Route path="/" element={<PrivateRoute><MarketplaceList /></PrivateRoute>} />
-                <Route path="/productos/:id" element={<PrivateRoute><ProductoDetalle /></PrivateRoute>} />
+                {/* RUTA DE BANDEJA DE MENSAJES */}
+                <Route path="/bandeja-mensajes" element={<PrivateRoute><BandejaMensajes /></PrivateRoute>} /> {/* <-- NUEVA RUTA */}
 
-                {/* Redirección por defecto */}
-                <Route path="*" element={<Navigate to="/" />} />
+                {/* RUTA DE VISIBILIDAD DE MAPA */}
+                <Route path="/mapa-incidentes" element={<PrivateRoute><ReporteMapa /></PrivateRoute>} />
 
-                <Route path="/reporte-form" element={<PrivateRoute><ReporteForm /></PrivateRoute>} />
-                <Route path="/mapa-incidentes" element={<PrivateRoute><ReporteMapa /></PrivateRoute>} />
-            </Routes>
-        </Router>
-    );
+                {/* Redirección por defecto */}
+                <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+        </Router>
+    );
 }
 
 // Estilos de la Navbar (Mantener los estilos que enviaste)
