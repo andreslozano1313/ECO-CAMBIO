@@ -3,6 +3,20 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useParams, useNavigate } from 'react-router-dom';
 
+// Función para formatear el precio a la convención colombiana (punto como separador de miles, sin decimales)
+const formatCOP = (number) => {
+    if (typeof number !== 'number' || isNaN(number)) {
+        return '0';
+    }
+    // Usa 'es-CO' para el formato colombiano
+    return new Intl.NumberFormat('es-CO', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(number);
+};
+
+
 const ProductoDetalle = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -50,7 +64,7 @@ const ProductoDetalle = () => {
 
                 <div style={styles.contentWrapper}>
                     {/* Sección de Imagen (CENTRALIZADA) */}
-                    <div style={styles.productImageContainer}> {/* <-- Nuevo contenedor para centrar */}
+                    <div style={styles.productImageContainer}>
                         {producto.Foto_Producto ? (
                             <img 
                                 src={`http://localhost:5000/${producto.Foto_Producto}`} 
@@ -63,9 +77,10 @@ const ProductoDetalle = () => {
                     </div>
 
                     {/* Nombre y Precio/Donación */}
-                    <h2 style={styles.productTitle}>{producto.Nombre_Producto}</h2> {/* "prueba" es el Nombre_Producto */}
+                    <h2 style={styles.productTitle}>{producto.Nombre_Producto}</h2>
                     <p style={styles.productPrice}>
-                        {producto.Tipo === 'Venta' ? `$${producto.Precio.toFixed(2)} COP` : 'Donación'}
+                        {/* APLICACIÓN DEL FORMATO COP */}
+                        {producto.Tipo === 'Venta' ? `$ ${formatCOP(producto.Precio)} COP` : 'Donación'}
                     </p>
 
                     {/* Descripción */}
@@ -104,29 +119,23 @@ const styles = {
     },
     card: {
         width: '100%',
-        maxWidth: '800px', // Un poco más ancho para la descripción
+        maxWidth: '800px',
         padding: '30px',
         backgroundColor: '#ffffff',
         borderRadius: '12px',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-        textAlign: 'left', // Alinear texto a la izquierda
+        textAlign: 'left',
     },
     title: {
         fontSize: '2.2em',
         fontWeight: 'bold',
         color: '#333',
         marginBottom: '25px',
-        textAlign: 'center', // Título centralizado
+        textAlign: 'center',
     },
     contentWrapper: {
         display: 'flex',
         flexDirection: 'column',
-    },
-    imageAndLogoContainer: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: '20px',
     },
     productImageContainer: { 
         display: 'flex',
@@ -156,54 +165,48 @@ const styles = {
         borderRadius: '8px',
         border: '1px solid #ddd',
     },
-    logo: {
-        width: '100px', // Tamaño del logo más pequeño
-        height: '100px',
-        borderRadius: '8px',
-        objectFit: 'cover',
-    },
     productTitle: {
         fontSize: '2em',
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: '5px',
+        marginBottom: '10px',
     },
     productPrice: {
         fontSize: '1.6em',
         fontWeight: '600',
-        color: '#4CAF50', // Verde para el precio
-        marginBottom: '20px',
+        color: '#4CAF50',
+        marginBottom: '15px',
     },
     sectionTitle: {
         fontSize: '1.5em',
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: '10px',
+        marginBottom: '8px',
         borderBottom: '1px solid #eee',
         paddingBottom: '5px',
     },
     productDescription: {
         fontSize: '1.1em',
         color: '#555',
-        lineHeight: '1.6',
-        marginBottom: '25px',
+        lineHeight: '1.5',
+        marginBottom: '20px',
     },
     detailsGroup: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
-        marginBottom: '30px',
-        fontSize: '1.1em',
+        gap: '8px',
+        marginBottom: '25px',
+        fontSize: '1.05em',
         color: '#444',
     },
     detailItem: {
         margin: '0',
     },
     buyButton: {
-        backgroundColor: '#4CAF50', // Verde para el carrito
+        backgroundColor: '#4CAF50',
         color: 'white',
         border: 'none',
-        borderRadius: '50%', // Botón circular
+        borderRadius: '50%',
         width: '60px',
         height: '60px',
         fontSize: '2em',
@@ -211,12 +214,12 @@ const styles = {
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        alignSelf: 'flex-end', // Alinearlo a la derecha
+        alignSelf: 'flex-end',
         boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
         transition: 'background-color 0.3s ease',
     },
     donateButton: {
-        backgroundColor: '#007bff', // Azul para donación
+        backgroundColor: '#007bff',
         color: 'white',
         border: 'none',
         borderRadius: '50%',

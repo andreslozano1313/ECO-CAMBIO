@@ -5,7 +5,21 @@ import { useNavigate } from 'react-router-dom';
 import Comentarios from './Comentarios'; 
 
 const API_URL = 'http://localhost:5000/api/productos';
-const MENSAJE_API_URL = 'http://localhost:5000/api/mensajes'; // <-- Nueva URL para la mensajería
+const MENSAJE_API_URL = 'http://localhost:5000/api/mensajes'; 
+
+// FUNCIÓN DE UTILIDAD: Formato de precio colombiano
+const formatCOP = (number) => {
+    if (typeof number !== 'number' || isNaN(number)) {
+        return '0';
+    }
+    // Usa 'es-CO' para el formato colombiano (punto como separador de miles, sin decimales)
+    return new Intl.NumberFormat('es-CO', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(number);
+};
+
 
 const MarketplaceList = () => {
     const [productos, setProductos] = useState([]);
@@ -15,8 +29,6 @@ const MarketplaceList = () => {
     
     const REAL_TOKEN = localStorage.getItem('userToken');
     const navigate = useNavigate(); 
-
-    // Obtener ID del usuario autenticado de forma simple para la UI (Necesario para la lógica de no comprarse a sí mismo)
     const loggedInUserId = REAL_TOKEN ? JSON.parse(atob(REAL_TOKEN.split('.')[1])).id : null; 
 
     const getConfig = useCallback(() => ({
@@ -24,7 +36,7 @@ const MarketplaceList = () => {
         params: { q: searchTerm } 
     }), [REAL_TOKEN, searchTerm]); 
 
-    // Función para Consumir la API (Permanece igual)
+    // Función para Consumir la API
     const fetchProductos = useCallback(async () => {
         if (!REAL_TOKEN) {
             navigate('/login');
@@ -42,18 +54,17 @@ const MarketplaceList = () => {
         }
     }, [REAL_TOKEN, navigate, getConfig]);
 
-    // 1. FUNCIÓN handleTransaction MODIFICADA A MENSAJERÍA DE INTERÉS
+    // Lógica de Mensajería (handleTransaction)
     const handleTransaction = (producto) => {
-        // Validación de no enviarse mensaje a sí mismo
         if (producto.ID_Usuario._id === loggedInUserId) {
             Swal.fire('Error', 'No puedes enviarte un mensaje de interés en tu propio artículo.', 'warning');
             return;
         }
 
         Swal.fire({
-            title: `Mensaje de Interés en ${producto.Nombre_Producto}`,
+            title: `Interés en ${producto.Nombre_Producto}`,
             html: `
-                <p style="text-align: left;">Estás a punto de enviar un mensaje privado al vendedor para coordinar la entrega o compra. El vendedor recibirá una alerta.</p>
+                <p style="text-align: left;">Estás a punto de enviar un mensaje privado al vendedor para coordinar la entrega o compra.</p>
                 <textarea id="swal-input-mensaje" placeholder="Escribe tu mensaje interno para coordinar (Ej: ¿Podríamos vernos el sábado?)..." 
                 maxlength="200" style="width: 100%; height: 100px; padding: 10px; resize: vertical; border-radius: 6px;"></textarea>
             `,
@@ -76,11 +87,9 @@ const MarketplaceList = () => {
                     const data = {
                         productoId: producto._id,
                         contenido: mensajeContenido,
-                        // El tipoMensaje se determina en el backend, pero lo enviamos como parte de la data
                         tipoMensaje: producto.Tipo === 'Venta' ? 'INTERES_COMPRA' : 'INTERES_DONACION' 
                     };
                     
-                    // Llamada a la API de Mensajería
                     await axios.post(MENSAJE_API_URL, data, getConfig()); 
 
                     Swal.fire({
@@ -94,7 +103,7 @@ const MarketplaceList = () => {
                 }
             }
         });
-    }; // FIN handleTransaction
+    };
 
 
     useEffect(() => {
@@ -115,9 +124,7 @@ const MarketplaceList = () => {
     return (
         <div style={styles.pageContainer}>
             
-            {/* BARRA DE BÚSQUEDA Y OTROS ELEMENTOS DE RENDERIZADO (sin cambios) */}
-            {/* ... */}
-            
+            {/* BARRA DE BÚSQUEDA */}
             <form onSubmit={handleSearchClick} style={styles.searchBar}>
                 <input
                     type="text"
@@ -134,58 +141,95 @@ const MarketplaceList = () => {
             <h2 style={styles.title}>Marketplace de Artículos Ecológicos ({productos.length})</h2>
             
             <div style={styles.grid}>
-                {productos.map((producto) => (
-                    <div key={producto._id} style={styles.card}>
-                        
-                        {/* IMAGEN DEL PRODUCTO (AÑADIR onClick para Navegación) */}
-                        <div 
-                            style={styles.imageWrapper}
-                            onClick={() => navigate(`/productos/${producto._id}`)}
-                        >
-                            {/* ... (Imagen o placeholder) ... */}
-                            {producto.Foto_Producto ? (
-                                <img 
-                                    src={`http://localhost:5000/${producto.Foto_Producto}`} 
-                                    alt={producto.Nombre_Producto} 
-                                    style={styles.image} 
-                                />
-                             ) : (
-                                <div style={styles.noImage}>[Imagen No Disponible]</div>
-                             )}
-                        </div>
+                {productos.map((producto) => {
+                    const isOwnProduct = producto.ID_Usuario._id === loggedInUserId;
+                    
+                    return (
+                        <div key={producto._id} >
+                            
+                            {/* CONTENEDOR DE LA TARJETA CON LÓGICA DE HOVER */}
+                            <div 
+                                style={styles.card}
+                                // Aquí usamos eventos de mouse para aplicar estilos de hover sin Hooks
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-5px) scale(1.01)';
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                                    // Cambia el estilo de la imagen al hacer hover
+                                    const img = e.currentTarget.querySelector('img');
+                                    if (img) img.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = styles.card.boxShadow;
+                                    const img = e.currentTarget.querySelector('img');
+                                    if (img) img.style.transform = 'scale(1)';
+                                }}
+                            >
+                                
+                                {/* IMAGEN DEL PRODUCTO (CLICKABLE) */}
+                                <div 
+                                    style={styles.imageWrapper}
+                                    onClick={() => navigate(`/productos/${producto._id}`)}
+                                >
+                                    {producto.Foto_Producto ? (
+                                        <img 
+                                            src={`http://localhost:5000/${producto.Foto_Producto}`} 
+                                            alt={producto.Nombre_Producto} 
+                                            style={{...styles.image, transition: 'transform 0.3s'}} // Transición a la imagen
+                                        />
+                                    ) : (
+                                        <div style={styles.noImage}>[Imagen No Disponible]</div>
+                                    )}
+                                </div>
 
-                        <div style={styles.cardBody}>
-                            {/* ... (Nombre, Ubicación, Precio, Insignias) ... */}
-                            <h3 style={styles.cardTitle}>{producto.Nombre_Producto}</h3>
-                            <p style={styles.locationText}>📍 {producto.Ubicacion}</p>
-                            <p style={styles.cardPrice}>{producto.Tipo === 'Venta' ? `$${producto.Precio.toFixed(2)}` : '¡DONACIÓN GRATIS!'}</p>
-                            <div style={styles.badgeGroup}>
-                                <span style={styles.badge}>{producto.Categoria}</span>
-                                <span style={styles.estado}>{producto.Estado}</span>
+                                <div style={styles.cardBody}>
+                                    
+                                    {/* NOMBRE Y AUTOR */}
+                                    <h3 style={styles.cardTitle}>{producto.Nombre_Producto}</h3>
+                                    <p style={styles.authorText}>
+                                        Publicado por: <strong>{producto.ID_Usuario?.nombres || 'Usuario Desconocido'}</strong>
+                                    </p>
+                                    
+                                    {/* UBICACIÓN Y PRECIO */}
+                                    <div style={styles.priceLocationGroup}>
+                                        <p style={styles.locationText}>📍 {producto.Ubicacion}</p>
+                                        
+                                        {/* APLICACIÓN DEL FORMATO COP AQUÍ */}
+                                        <p style={styles.cardPrice}>
+                                            {producto.Tipo === 'Venta' ? `$ ${formatCOP(producto.Precio)}` : '¡DONACIÓN!'}
+                                        </p>
+                                        {/* ------------------------------------ */}
+
+                                    </div>
+                                    
+                                    {/* INSIGNIAS */}
+                                    <div style={styles.badgeGroup}>
+                                        <span style={styles.badge}>{producto.Categoria}</span>
+                                        <span style={styles.estado}>{producto.Estado}</span>
+                                    </div>
+                                    
+                                    {/* BOTONES DE ACCIÓN */}
+                                    <div style={styles.actionButtons}>
+                                        <button onClick={() => toggleComentarios(producto._id)} style={styles.commentButton}>
+                                            {comentarioProductoId === producto._id ? 'Ocultar Comentarios' : 'Ver Comentarios'}
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => handleTransaction(producto)} 
+                                            style={isOwnProduct ? styles.ownProductButton : (producto.Tipo === 'Venta' ? styles.buyButton : styles.donateButton)}
+                                            disabled={isOwnProduct} 
+                                        >
+                                            {isOwnProduct ? 'Tu Artículo' : (producto.Tipo === 'Venta' ? 'Comprar Artículo' : 'Solicitar Donación')}
+                                        </button>
+                                    </div>
+
+                                </div>
                             </div>
-                            
-                            {/* BOTÓN DE COMENTARIOS */}
-                            <button 
-                                onClick={() => toggleComentarios(producto._id)} 
-                                style={styles.commentButton}
-                            >
-                                {comentarioProductoId === producto._id ? 'Ocultar Comentarios' : 'Ver Comentarios'}
-                            </button>
-                            
-                            {/* BOTÓN DE TRANSACCIÓN/MENSAJE (ACTUALIZADO) */}
-                            <button 
-                                onClick={() => handleTransaction(producto)} // <-- Llama a la nueva función de mensajería
-                                style={producto.Tipo === 'Venta' ? styles.buyButton : styles.donateButton}
-                                disabled={producto.ID_Usuario._id === loggedInUserId} // Deshabilita si es propio
-                            >
-                                {producto.ID_Usuario._id === loggedInUserId ? 'Tu Artículo' : (producto.Tipo === 'Venta' ? 'Comprar Artículo' : 'Solicitar Donación')}
-                            </button>
-
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
-            {productos.length === 0 && <p style={{textAlign: 'center', marginTop: '50px'}}>No hay artículos disponibles. ¡Sé el primero en publicar!</p>}
+            {productos.length === 0 && <p style={{textAlign: 'center', marginTop: '50px', fontSize: '1.2em'}}>No hay artículos disponibles. ¡Sé el primero en publicar!</p>}
 
             {/* Renderizado del componente de Comentarios */}
             {comentarioProductoId && (
@@ -198,85 +242,139 @@ const MarketplaceList = () => {
     );
 };
 
-// --- Estilos Ajustados para Compacidad ---
+// --- ESTILOS REFACTORIZADOS Y MEJORADOS ---
 const styles = {
+    // LAYOUT GENERAL
     pageContainer: { 
         padding: '20px 40px', 
         backgroundColor: '#f0f2f5',
         minHeight: 'calc(100vh - 70px)', 
     },
-    title: { textAlign: 'center', color: '#333', marginBottom: '30px' }, // Menos margen abajo
+    title: { textAlign: 'center', color: '#1A4D2E', marginBottom: '30px', fontSize: '2em' },
     
-    // --- ESTILOS DE BÚSQUEDA ---
+    // BARRA DE BÚSQUEDA
     searchBar: {
         display: 'flex',
-        marginBottom: '30px',
-        maxWidth: '700px',
-        margin: '0 auto 30px', // Menos margen abajo
+        maxWidth: '800px',
+        margin: '0 auto 30px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+        borderRadius: '8px',
+        overflow: 'hidden',
     },
-    searchInput: { flexGrow: 1, padding: '10px', borderRadius: '8px 0 0 8px', border: '1px solid #ddd', fontSize: '15px', outline: 'none' }, // Padding más pequeño
+    searchInput: { flexGrow: 1, padding: '12px', border: 'none', fontSize: '16px', outline: 'none' },
     searchButton: {
-        padding: '10px 18px', // Padding más pequeño
-        backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', fontWeight: 'bold', transition: 'background-color 0.3s',
+        padding: '12px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: 'background-color 0.3s',
     },
-    // --- FIN ESTILOS BÚSQUEDA ---
     
+    // GRID Y TARJETA
     grid: { 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', // Ancho mínimo más pequeño
-        gap: '20px', // Menos espacio entre tarjetas
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+        gap: '25px', 
     },
     card: { 
-        border: 'none', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        backgroundColor: 'white', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column',
+        border: '1px solid #e0e0e0',
+        borderRadius: '12px', 
+        overflow: 'hidden', 
+        boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
+        backgroundColor: 'white', 
+        transition: 'all 0.3s ease-in-out', // Transición para el hover JS
+        display: 'flex', 
+        flexDirection: 'column',
+        cursor: 'pointer' // Indicador de clickeable
     },
-    imageWrapper: { height: '180px', overflow: 'hidden', borderBottom: '1px solid #eee' }, // Altura de imagen reducida
+    imageWrapper: { 
+        height: '180px', 
+        overflow: 'hidden', 
+        borderBottom: '1px solid #eee', 
+        transition: 'transform 0.3s', // Para que la imagen se mueva suavemente
+    }, 
     image: { width: '100%', height: '100%', objectFit: 'cover' },
-    noImage: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f0f0', color: '#aaa' },
+    noImage: { height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f0f0', color: '#aaa', fontSize: '1.1em' },
     
-    cardBody: { padding: '15px', flexGrow: 1, display: 'flex', flexDirection: 'column' }, // Padding más pequeño
+    cardBody: { padding: '15px', flexGrow: 1, display: 'flex', flexDirection: 'column' }, 
     
-    // --- ESTILOS DE TEXTO ---
-    cardTitle: { fontSize: '1.2em', marginBottom: '3px', color: '#333' }, // Tamaño de título más pequeño
-    locationText: { fontSize: '0.85em', color: '#777', marginBottom: '8px', fontWeight: '500' }, // Tamaño de texto más pequeño
-    badgeGroup: { 
-        marginBottom: '10px', 
-        marginTop: 'auto', 
-        paddingTop: '8px', // Menos padding
-        borderTop: '1px solid #eee'
+    // INFORMACIÓN
+    cardTitle: { fontSize: '1.3em', fontWeight: 'bold', marginBottom: '5px', color: '#333' },
+    authorText: { fontSize: '0.8em', color: '#777', marginBottom: '8px', fontStyle: 'italic' },
+    locationText: { fontSize: '0.9em', color: '#555', fontWeight: '600', marginBottom: '10px' },
+    
+    // PRECIO Y UBICACIÓN GRUPO
+    priceLocationGroup: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        paddingBottom: '10px',
+        borderBottom: '1px solid #eee',
     },
-    
-    badge: { backgroundColor: '#e6f7ff', color: '#1890ff', padding: '2px 6px', borderRadius: '3px', fontSize: '0.7em', marginRight: '5px' },
-    estado: { backgroundColor: '#fffbe6', color: '#faad14', padding: '2px 6px', borderRadius: '3px', fontSize: '0.7em' },
-    
     cardPrice: { 
-        fontSize: '1.5em', // Tamaño de precio reducido
-        fontWeight: 'bold', color: '#4CAF50', marginTop: '5px', marginBottom: '10px',
+        fontSize: '1.5em', 
+        fontWeight: 'extrabold', 
+        color: '#1A4D2E', 
+        margin: '0',
     },
-    // --- ESTILOS DE BOTONES ---
+    
+    // INSIGNIAS
+    badgeGroup: { 
+        marginBottom: '15px', 
+        marginTop: 'auto', 
+        paddingTop: '10px', 
+        borderTop: '1px solid #eee',
+        display: 'flex',
+        gap: '8px',
+    },
+    badge: { 
+        backgroundColor: '#e6f7ff', 
+        color: '#1890ff', 
+        padding: '4px 10px', 
+        borderRadius: '15px', 
+        fontSize: '0.75em',
+        fontWeight: 'bold'
+    },
+    estado: { 
+        backgroundColor: '#fffbe6', 
+        color: '#faad14', 
+        padding: '4px 10px', 
+        borderRadius: '15px', 
+        fontSize: '0.75em',
+        fontWeight: 'bold'
+    },
+    
+    // BOTONES DE ACCIÓN
+    actionButtons: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    },
     commentButton: {
-        width: '100%', padding: '8px', // Padding más pequeño
-        backgroundColor: '#337ab7', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginBottom: '8px',
+        width: '100%', padding: '10px', backgroundColor: '#337ab7', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
+        transition: 'background-color 0.2s',
     },
     buyButton: { 
-        width: '100%', padding: '10px', // Padding más pequeño
-        backgroundColor: '#ffc107', color: 'black', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
+        width: '100%', padding: '10px', backgroundColor: '#ffc107', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
     },
     donateButton: { 
-        width: '100%', padding: '10px', // Padding más pequeño
-        backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
+        width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
+    },
+    ownProductButton: { 
+        width: '100%', padding: '10px', backgroundColor: '#e9ecef', color: '#6c757d', border: '1px solid #ccc', borderRadius: '6px', fontWeight: 'bold',
     },
     comentariosWrapper: {
         backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '10px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-        marginTop: '20px',
-        marginBottom: '20px',
+        padding: '30px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+        marginTop: '30px',
+        marginBottom: '30px',
     }
 };
 
 export default MarketplaceList;
+
+
+
+
+
 
 
 
