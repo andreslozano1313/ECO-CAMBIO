@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'; 
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -13,8 +13,10 @@ import ForgotPassword from './components/ForgotPassword';
 import ProductoDetalle from './components/ProductoDetalle';
 import ReporteMapa from './components/ReporteMapa';
 import BandejaMensajes from './components/BandejaMensajes'; 
+import UserDropdown from './components/UserDropdown'; 
+import ActualizarPerfil from './components/ActualizarPerfil'; 
 
-const NOTIFICACIONES_API_URL = 'http://localhost:5000/api/notificaciones';
+const NOTIFICACIONES_API_URL = 'http://localhost:5000/api/notificaciones'; 
 
 // Componente que comprueba si hay un token en localStorage
 const checkAuth = () => {
@@ -31,6 +33,21 @@ function App() {
     // ESTADO
     const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
     const [notifCount, setNotifCount] = useState(0); 
+
+    // Helper para obtener el nombre de usuario del token (simplificado)
+    const getUserNameFromToken = () => {
+        const token = localStorage.getItem('userToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.nombres || 'Usuario'; 
+            } catch (e) {
+                return 'Usuario';
+            }
+        }
+        return 'Usuario';
+    };
+
 
     // FUNCIÓN PARA BUSCAR NOTIFICACIONES PENDIENTES
     const fetchNotificaciones = useCallback(async () => {
@@ -70,7 +87,7 @@ function App() {
         <nav style={styles.navbar}>
             {isAuthenticated && (
                 <>
-                    {/* Usamos className="nav-link-item" para el hover CSS */}
+                    {/* Links de navegación */}
                     <Link to="/" className="nav-link-item">Marketplace</Link>
                     <Link to="/crear-producto" className="nav-link-item">Publicar Artículo</Link>
                     <Link to="/reporte-form" className="nav-link-item">Enviar Reporte</Link> 
@@ -86,7 +103,10 @@ function App() {
             
             <div style={{ marginLeft: 'auto' }}>
                 {isAuthenticated ? (
-                    <button onClick={handleLogout} style={styles.logoutButton}>Cerrar Sesión</button>
+                    <UserDropdown 
+                        handleLogout={handleLogout} 
+                        userName={getUserNameFromToken()} 
+                    />
                 ) : (
                     <></> 
                 )}
@@ -113,7 +133,7 @@ function App() {
                     align-items: center;
                 }
                 .nav-link-item:hover { 
-                    color: #FFC107; 
+                    color: #FFC107; /* Amarillo de acción */
                     transform: scale(1.05);
                 }
             `}} />
@@ -131,6 +151,9 @@ function App() {
                 <Route path="/productos/:id" element={<PrivateRoute><ProductoDetalle /></PrivateRoute>} />
                 <Route path="/bandeja-mensajes" element={<PrivateRoute><BandejaMensajes /></PrivateRoute>} />
                 <Route path="/mapa-incidentes" element={<PrivateRoute><ReporteMapa /></PrivateRoute>} />
+                
+                {/* RUTA DE PERFIL / ACTUALIZACIÓN */}
+                <Route path="/perfil" element={<PrivateRoute><ActualizarPerfil /></PrivateRoute>} /> 
 
                 {/* Redirección por defecto */}
                 <Route path="*" element={<Navigate to="/" />} />
@@ -150,7 +173,6 @@ const styles = {
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)', // Sombra para elevación
     },
     navLink: { 
-        // Estos estilos son de soporte, la clase CSS maneja el diseño principal
         color: 'white', 
         textDecoration: 'none', 
         margin: '0 15px',
