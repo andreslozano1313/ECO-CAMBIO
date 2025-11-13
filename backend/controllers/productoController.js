@@ -1,5 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Producto = require('../models/Producto');
+const Mensaje = require('../models/Mensaje'); // <-- NECESARIO
+const fs = require('fs');
 
 // @desc    Crear un nuevo producto para venta/donación
 // @route   POST /api/productos
@@ -99,13 +101,27 @@ const eliminarProducto = asyncHandler(async (req, res) => {
         throw new Error('Producto no encontrado.');
     }
 
+    // Seguridad: solo el autor puede eliminar (YA EXISTENTE)
     if (producto.ID_Usuario.toString() !== req.usuario.id) {
         res.status(401);
         throw new Error('Usuario no autorizado.');
     }
 
+    // 1. LÓGICA DE ELIMINACIÓN EN CASCADA: Borrar todos los mensajes asociados
+    await Mensaje.deleteMany({ producto: req.params.id }); 
+    console.log(`Mensajes asociados al producto ${req.params.id} eliminados en cascada.`);
+
+    // 2. Eliminar la Imagen del Servidor (si existe - YA EXISTENTE)
+    if (producto.Foto_Producto) {
+        fs.unlink(producto.Foto_Producto, (err) => {
+            if (err) console.error("Error al eliminar la imagen del producto:", err);
+        });
+    }
+
+    // 3. Eliminar el Producto
     await producto.deleteOne();
-    res.status(200).json({ id: req.params.id, message: 'Producto eliminado.' });
+    
+    res.status(200).json({ id: req.params.id, message: 'Producto y conversaciones eliminados.' });
 });
 
 // --- EXPORTACIÓN FINAL ---
