@@ -3,25 +3,13 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import Comentarios from './Comentarios'; 
+import { FaTimes } from 'react-icons/fa'; // Importar el icono X para eliminar
 
 const API_URL = 'http://localhost:5000/api/productos';
 const MENSAJE_API_URL = 'http://localhost:5000/api/mensajes'; 
 
-// FUNCIÓN DE UTILIDAD: Formato de precio colombiano
-const formatCOP = (number) => {
-    if (typeof number !== 'number' || isNaN(number)) {
-        return '0';
-    }
-    // Usa 'es-CO' para el formato colombiano (punto como separador de miles, sin decimales)
-    return new Intl.NumberFormat('es-CO', {
-        style: 'decimal',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(number);
-};
-
-
 const MarketplaceList = () => {
+    // Hooks en el nivel superior del componente
     const [productos, setProductos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState(''); 
@@ -38,23 +26,44 @@ const MarketplaceList = () => {
 
     // Función para Consumir la API
     const fetchProductos = useCallback(async () => {
-        if (!REAL_TOKEN) {
-            navigate('/login');
-            return;
-        }
-
+        if (!REAL_TOKEN) { navigate('/login'); return; }
         try {
             const response = await axios.get(API_URL, getConfig());
             setProductos(response.data);
             setLoading(false);
         } catch (error) {
-            console.error("Error al obtener productos:", error);
             Swal.fire('Error', 'No se pudo cargar el Marketplace. Inténtalo más tarde.', 'error');
             setLoading(false);
         }
     }, [REAL_TOKEN, navigate, getConfig]);
 
-    // Lógica de Mensajería (handleTransaction)
+
+    // NUEVA FUNCIÓN PARA ELIMINAR EL PRODUCTO DESDE LA CARD (Usada por el Vendedor)
+    const handleDeleteProduct = async (productId, productName) => {
+        const result = await Swal.fire({
+            title: '¿Confirmar Retiro?',
+            text: `¿Estás seguro de que deseas retirar "${productName}" del Marketplace (Vendido/Donado)?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545', // Rojo para confirmar eliminación
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, Retirar',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Llama a la API DELETE /api/productos/:id
+                await axios.delete(`${API_URL}/${productId}`, getConfig()); 
+                Swal.fire('Retirado!', `El artículo "${productName}" ha sido eliminado.`, 'success');
+                fetchProductos(); // Refrescar la lista
+            } catch (error) {
+                Swal.fire('Error', error.response?.data?.message || 'Fallo al retirar. Solo el publicador puede hacerlo.', 'error');
+            }
+        }
+    };
+
+
+    // FUNCIÓN handleTransaction (Mensajería de Interés)
     const handleTransaction = (producto) => {
         if (producto.ID_Usuario._id === loggedInUserId) {
             Swal.fire('Error', 'No puedes enviarte un mensaje de interés en tu propio artículo.', 'warning');
@@ -62,7 +71,7 @@ const MarketplaceList = () => {
         }
 
         Swal.fire({
-            title: `Interés en ${producto.Nombre_Producto}`,
+            title: `Mensaje de Interés en ${producto.Nombre_Producto}`,
             html: `
                 <p style="text-align: left;">Estás a punto de enviar un mensaje privado al vendedor para coordinar la entrega o compra.</p>
                 <textarea id="swal-input-mensaje" placeholder="Escribe tu mensaje interno para coordinar (Ej: ¿Podríamos vernos el sábado?)..." 
@@ -103,7 +112,7 @@ const MarketplaceList = () => {
                 }
             }
         });
-    };
+    }; 
 
 
     useEffect(() => {
@@ -143,18 +152,17 @@ const MarketplaceList = () => {
             <div style={styles.grid}>
                 {productos.map((producto) => {
                     const isOwnProduct = producto.ID_Usuario._id === loggedInUserId;
+
+                    // Lógica de hover CSS (Mantenido)
                     
                     return (
                         <div key={producto._id} >
                             
-                            {/* CONTENEDOR DE LA TARJETA CON LÓGICA DE HOVER */}
                             <div 
                                 style={styles.card}
-                                // Aquí usamos eventos de mouse para aplicar estilos de hover sin Hooks
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.transform = 'translateY(-5px) scale(1.01)';
                                     e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                                    // Cambia el estilo de la imagen al hacer hover
                                     const img = e.currentTarget.querySelector('img');
                                     if (img) img.style.transform = 'scale(1.05)';
                                 }}
@@ -175,16 +183,29 @@ const MarketplaceList = () => {
                                         <img 
                                             src={`http://localhost:5000/${producto.Foto_Producto}`} 
                                             alt={producto.Nombre_Producto} 
-                                            style={{...styles.image, transition: 'transform 0.3s'}} // Transición a la imagen
+                                            style={{...styles.image, transition: 'transform 0.3s'}}
                                         />
                                     ) : (
                                         <div style={styles.noImage}>[Imagen No Disponible]</div>
+                                    )}
+
+                                    {/* BOTÓN DE ELIMINACIÓN RÁPIDA (Solo para el Propietario) */}
+                                    {isOwnProduct && (
+                                        <button 
+                                            style={styles.deleteButtonOverlay}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevenir que se abra la vista de detalle
+                                                handleDeleteProduct(producto._id, producto.Nombre_Producto);
+                                            }}
+                                        >
+                                            <FaTimes size={18} />
+                                        </button>
                                     )}
                                 </div>
 
                                 <div style={styles.cardBody}>
                                     
-                                    {/* NOMBRE Y AUTOR */}
+                                    {/* INFORMACIÓN */}
                                     <h3 style={styles.cardTitle}>{producto.Nombre_Producto}</h3>
                                     <p style={styles.authorText}>
                                         Publicado por: <strong>{producto.ID_Usuario?.nombres || 'Usuario Desconocido'}</strong>
@@ -193,13 +214,9 @@ const MarketplaceList = () => {
                                     {/* UBICACIÓN Y PRECIO */}
                                     <div style={styles.priceLocationGroup}>
                                         <p style={styles.locationText}>📍 {producto.Ubicacion}</p>
-                                        
-                                        {/* APLICACIÓN DEL FORMATO COP AQUÍ */}
                                         <p style={styles.cardPrice}>
                                             {producto.Tipo === 'Venta' ? `$ ${formatCOP(producto.Precio)}` : '¡DONACIÓN!'}
                                         </p>
-                                        {/* ------------------------------------ */}
-
                                     </div>
                                     
                                     {/* INSIGNIAS */}
@@ -210,10 +227,13 @@ const MarketplaceList = () => {
                                     
                                     {/* BOTONES DE ACCIÓN */}
                                     <div style={styles.actionButtons}>
+                                        
+                                        {/* BOTÓN 1: COMENTARIOS */}
                                         <button onClick={() => toggleComentarios(producto._id)} style={styles.commentButton}>
                                             {comentarioProductoId === producto._id ? 'Ocultar Comentarios' : 'Ver Comentarios'}
                                         </button>
                                         
+                                        {/* BOTÓN 2: TRANSACCIÓN/MENSAJE (Botón Principal) */}
                                         <button 
                                             onClick={() => handleTransaction(producto)} 
                                             style={isOwnProduct ? styles.ownProductButton : (producto.Tipo === 'Venta' ? styles.buyButton : styles.donateButton)}
@@ -241,6 +261,19 @@ const MarketplaceList = () => {
         </div>
     );
 };
+
+// Función para formatear el precio a la convención colombiana
+const formatCOP = (number) => {
+    if (typeof number !== 'number' || isNaN(number)) {
+        return '0';
+    }
+    return new Intl.NumberFormat('es-CO', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(number);
+};
+
 
 // --- ESTILOS REFACTORIZADOS Y MEJORADOS ---
 const styles = {
@@ -278,19 +311,40 @@ const styles = {
         overflow: 'hidden', 
         boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
         backgroundColor: 'white', 
-        transition: 'all 0.3s ease-in-out', // Transición para el hover JS
+        transition: 'all 0.3s ease-in-out',
         display: 'flex', 
         flexDirection: 'column',
-        cursor: 'pointer' // Indicador de clickeable
+        cursor: 'pointer'
     },
     imageWrapper: { 
         height: '180px', 
         overflow: 'hidden', 
         borderBottom: '1px solid #eee', 
-        transition: 'transform 0.3s', // Para que la imagen se mueva suavemente
+        transition: 'transform 0.3s',
+        position: 'relative', // NECESARIO para el botón de superposición
     }, 
     image: { width: '100%', height: '100%', objectFit: 'cover' },
     noImage: { height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f0f0', color: '#aaa', fontSize: '1.1em' },
+    
+    // BOTÓN DE ELIMINAR RÁPIDA (SUPERPUESTO)
+    deleteButtonOverlay: {
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        backgroundColor: 'rgba(220, 53, 69, 0.9)', // Rojo semitransparente
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '30px',
+        height: '30px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        zIndex: 10, // Asegura que esté por encima de la imagen
+        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+        transition: 'background-color 0.2s',
+    },
     
     cardBody: { padding: '15px', flexGrow: 1, display: 'flex', flexDirection: 'column' }, 
     
