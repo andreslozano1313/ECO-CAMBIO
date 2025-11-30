@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config';
 
-const API_URL = `${API_BASE_URL}/login`;
+const API_URL = `${API_BASE_URL}/auth/login`;
 
 const Login = ({ setIsAuthenticated }) => {
     const [formData, setFormData] = useState({
