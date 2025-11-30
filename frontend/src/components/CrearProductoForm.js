@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
+
 
 // Importa tu logo aquí (Asegúrate de que la ruta sea correcta)
 
-const API_URL = 'http://localhost:5000/api/productos';
+const API_URL = `${API_BASE_URL}/productos`;
 const CATEGORIAS = ['Electrodoméstico', 'Mueble', 'Ropa', 'Electrónica', 'Otros'];
 const ESTADOS = ['Nuevo', 'Usado', 'Para Reutilizar'];
 

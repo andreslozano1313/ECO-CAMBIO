@@ -4,8 +4,10 @@ import DataTable from 'react-data-table-component';
 import Swal from 'sweetalert2'; 
 import styled from 'styled-components';
 import Comentarios from './Comentarios'; // Componente de Comentarios (Importación existente)
+import API_BASE_URL from '../config';
 
-const API_URL = 'http://localhost:5000/api/publicaciones';
+const API_URL = `${API_BASE_URL}/publicaciones`;
+
 
 const PublicacionesList = () => {
     const [publicaciones, setPublicaciones] = useState([]);

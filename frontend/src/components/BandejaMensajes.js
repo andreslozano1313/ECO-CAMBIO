@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
 
-const API_MENSAJES_URL = 'http://localhost:5000/api/mensajes';
+const API_MENSAJES_URL = `${API_BASE_URL}/mensajes`;
 const API_RECIBIDOS_URL = `${API_MENSAJES_URL}/recibidos`;
-const API_PRODUCTOS_URL = 'http://localhost:5000/api/productos';
+const API_PRODUCTOS_URL = `${API_BASE_URL}/productos`;
 
 const BandejaMensajes = () => {
     const [mensajes, setMensajes] = useState([]);

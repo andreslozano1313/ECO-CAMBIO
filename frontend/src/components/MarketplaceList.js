@@ -4,8 +4,9 @@ import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import Comentarios from './Comentarios'; 
 import { FaTimes } from 'react-icons/fa'; // Importar el icono X para eliminar
+import API_BASE_URL from '../config';
 
-const API_URL = 'http://localhost:5000/api/productos';
+const API_URL = `${API_BASE_URL}/productos`;
 const MENSAJE_API_URL = 'http://localhost:5000/api/mensajes'; 
 
 const MarketplaceList = () => {

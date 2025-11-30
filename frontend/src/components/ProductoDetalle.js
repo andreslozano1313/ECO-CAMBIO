@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useParams, useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
 
 // Función para formatear el precio a la convención colombiana (punto como separador de miles, sin decimales)
 const formatCOP = (number) => {
@@ -34,7 +35,7 @@ const ProductoDetalle = () => {
             const config = {
                 headers: { Authorization: `Bearer ${REAL_TOKEN}` },
             };
-            const response = await axios.get(`http://localhost:5000/api/productos/${id}`, config);
+            const response = await axios.get(`${API_BASE_URL}/productos/${id}`, config);
             setProducto(response.data);
             setLoading(false);
         } catch (error) {

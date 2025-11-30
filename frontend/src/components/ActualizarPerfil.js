@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:5000/api/usuarios/perfil';
 
+
 const ActualizarPerfil = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({

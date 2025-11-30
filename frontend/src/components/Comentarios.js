@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import API_BASE_URL from '../config';
 
 const Comentarios = ({ publicacionId }) => {
     const [comentarios, setComentarios] = useState([]);
@@ -8,7 +9,8 @@ const Comentarios = ({ publicacionId }) => {
     const [loading, setLoading] = useState(true);
 
     const REAL_TOKEN = localStorage.getItem('userToken');
-    const API_URL = `http://localhost:5000/api/publicaciones/${publicacionId}/comentarios`;
+    const API_URL = `${API_BASE_URL}/publicaciones/${publicacionId}/comentarios`;
+
 
     const getConfig = useCallback(() => ({
         headers: { Authorization: `Bearer ${REAL_TOKEN}` },

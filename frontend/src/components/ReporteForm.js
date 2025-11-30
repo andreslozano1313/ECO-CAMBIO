@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet'; 
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
 
 // Icono por defecto (necesario en react-leaflet)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -13,7 +14,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const API_URL = 'http://localhost:5000/api/reportes';
+const API_URL = `${API_BASE_URL}/reportes`;
 
 // Componente hijo que maneja la interacción del mapa
 const LocationMarker = ({ setLocation }) => {

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom';
+import API_BASE_URL from '../config';
 
-const API_URL = 'http://localhost:5000/api/auth/forgotpassword';
+const API_URL = `${API_BASE_URL}/auth/forgotpassword`;
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
