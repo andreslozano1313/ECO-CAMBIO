@@ -7,7 +7,7 @@ const errorHandler = (err, req, res, next) => {
 
     res.json({
         message: err.message,
-        // En desarrollo mostramos el stack para debuggear, en producción no
+        // En desarrollo mostramos el stack para debuggear
         stack: process.env.NODE_ENV === 'production' ? null : err.stack, 
     });
 };

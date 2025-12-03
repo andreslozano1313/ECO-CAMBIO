@@ -77,7 +77,7 @@ const ForgotPassword = () => {
     );
 };
 
-// --- Estilos Actualizados (Simulando el Diseño del Login) ---
+// --- Estilos Actualizados 
 const styles = {
     pageContainer: {
         display: 'flex',
@@ -128,7 +128,7 @@ const styles = {
     },
     button: {
         padding: '12px',
-        backgroundColor: '#4CAF50', // Verde ecológico (igual que el botón de Login)
+        backgroundColor: '#4CAF50', // Verde ecológico 
         color: 'white',
         border: 'none',
         borderRadius: '8px',

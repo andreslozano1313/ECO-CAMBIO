@@ -1,12 +1,12 @@
-const asyncHandler = require('express-async-handler'); //esta libreria maneja las promesas de forma limpia
+const asyncHandler = require('express-async-handler'); 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 const nodemailer = require('nodemailer');
 
 // --- CÓDIGO CORREGIDO: AÑADIR NOMBRES AL PAYLOAD DEL JWT ---
-const generateToken = (id, nombres) => { // <-- AHORA ACEPTA NOMBRES
-    return jwt.sign({ id, nombres }, process.env.JWT_SECRET, { // <-- PAYLOAD INCLUYE NOMBRES
+const generateToken = (id, nombres) => { 
+    return jwt.sign({ id, nombres }, process.env.JWT_SECRET, { 
         expiresIn: '30d', // hace que el token expira en 30 días
     });
 };
@@ -57,7 +57,7 @@ const registerUser = asyncHandler(async (req, res) => {
           _id: usuario.id,
             nombres: usuario.nombres,
             email: usuario.email,
-            // AÑADIDO: Pasamos el nombre al token
+            // Pasamos el nombre al token
             token: generateToken(usuario._id, usuario.nombres), 
         });
      } else {
@@ -77,7 +77,7 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new Error('Por favor, ingresa email y contraseña.');
      }
 
-     // Buscar el usuario por email
+     
      const usuario = await Usuario.findOne({ email });
 
      // Comparar la contraseña ingresada con el hash de la BD
@@ -86,11 +86,11 @@ const loginUser = asyncHandler(async (req, res) => {
          _id: usuario.id,
             nombres: usuario.nombres,
             email: usuario.email,
-            // AÑADIDO: Pasamos el nombre al token
+            // Pasamos el nombre al token
             token: generateToken(usuario._id, usuario.nombres),
         });
      } else {
-         res.status(401); // Unauthorized
+         res.status(401); 
          throw new Error('Credenciales inválidas.');
      }
 });
@@ -113,13 +113,12 @@ const forgotPassword = asyncHandler(async (req, res) => {
          return res.status(200).json({ message: 'Si el email está registrado, recibirás un enlace de restablecimiento.' });
      }
     
-    // --- LÓGICA DE SIMULACIÓN ACTIVA ---
-    // NOTA: Esta simulación está configurada para ignorar el código real de Nodemailer
+    
      console.log(`[SIMULACIÓN] Correo de restablecimiento simulado enviado a: ${usuario.email}`);
      return res.status(200).json({ 
          message: 'Email de restablecimiento enviado con éxito.' 
      });
-    // --- FIN LÓGICA DE SIMULACIÓN ---
+    
 });
 
 

@@ -19,7 +19,7 @@ router.get('/', protect, asyncHandler(async (req, res) => {
 // @desc    Marcar una notificación como leída
 // @route   PUT /api/notificaciones/:id/leida
 // @access  Privado
-router.put('/:id/leida', protect, asyncHandler(async (req, res) => { // <-- RUTA CRÍTICA
+router.put('/:id/leida', protect, asyncHandler(async (req, res) => { 
     // Usamos findOneAndUpdate para asegurar que solo el usuarioDestino pueda marcarla como leída.
     const notificacion = await Notificacion.findOneAndUpdate(
         { _id: req.params.id, usuarioDestino: req.usuario.id }, 

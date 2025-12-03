@@ -25,7 +25,7 @@ const ReporteMapa = () => {
     // Obtener ID del usuario autenticado de forma simple para la UI (No es totalmente seguro, pero funciona para la lógica del frontend)
     const loggedInUserId = REAL_TOKEN ? JSON.parse(atob(REAL_TOKEN.split('.')[1])).id : null; 
     
-    // 1. FUNCIÓN PARA CARGAR REPORTES (USADA EN ELIMINACIÓN)
+    // FUNCIÓN PARA CARGAR REPORTES (USADA EN ELIMINACIÓN)
     const fetchReportes = useCallback(async () => {
         if (!REAL_TOKEN) {
             navigate('/login');
@@ -47,7 +47,7 @@ const ReporteMapa = () => {
         }
     }, [REAL_TOKEN, navigate]);
 
-    // 2. FUNCIÓN PARA ELIMINAR EL REPORTE (Marcar como Resuelto)
+    // 2. FUNCIÓN PARA ELIMINAR EL REPORTE
     const handleEliminarReporte = async (reporteId) => {
         const result = await Swal.fire({
             title: '¿Problema Resuelto?',
@@ -171,7 +171,7 @@ const styles = {
         height: '100%',
         width: '100%',
     },
-    // --- ESTILOS PARA EL POPUP ---
+   
     popupContent: {
         width: '200px',
         maxHeight: '350px',
@@ -195,7 +195,7 @@ const styles = {
     deleteButton: {
         marginTop: '10px',
         padding: '5px 10px',
-        backgroundColor: '#4CAF50', // Verde para indicar solución
+        backgroundColor: '#4CAF50', 
         color: 'white',
         border: 'none',
         borderRadius: '4px',

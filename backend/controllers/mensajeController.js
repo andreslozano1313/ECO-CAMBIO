@@ -2,7 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Mensaje = require('../models/Mensaje');
 const Producto = require('../models/Producto');
 const Notificacion = require('../models/Notificacion'); 
-const Usuario = require('../models/Usuario'); // <-- NECESARIO para obtener nombre del emisor de la respuesta
+const Usuario = require('../models/Usuario'); 
 
 // @desc    Obtener todos los mensajes recibidos por el usuario logueado
 // @route   GET /api/mensajes/recibidos
@@ -21,7 +21,7 @@ const getMensajesRecibidos = asyncHandler(async (req, res) => {
 // @route   POST /api/mensajes
 // @access  Privado
 const enviarMensajeInteres = asyncHandler(async (req, res) => {
-    // Se acepta 'receptorId' opcionalmente para las respuestas (el comprador original)
+    
     const { productoId, contenido, receptorId } = req.body; 
     const emisorId = req.usuario.id; // Usuario autenticado
 
@@ -86,9 +86,9 @@ const enviarMensajeInteres = asyncHandler(async (req, res) => {
         // Crear Notificación para el COMPRADOR
         const emisorUsuario = await Usuario.findById(emisorId).select('nombres');
         await Notificacion.create({
-            usuarioDestino: receptorDelMensaje, // Notificar al comprador
+            usuarioDestino: receptorDelMensaje, 
             emisor: emisorId,
-            tipo: 'COMENTARIO', // Reutilizar para alerta simple de respuesta
+            tipo: 'COMENTARIO', 
             mensaje: `${emisorUsuario.nombres} ha respondido a tu interés en un artículo. ¡Revisa tu Bandeja!`,
             referenciaId: productoId,
         });

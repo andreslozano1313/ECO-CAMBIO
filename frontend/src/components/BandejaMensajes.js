@@ -37,7 +37,7 @@ const BandejaMensajes = () => {
         fetchMensajes();
     }, [fetchMensajes]);
 
-    // ✅ FUNCIÓN PARA RETIRAR PRODUCTO (solo el vendedor puede hacerlo)
+    // ✅ FUNCIÓN PARA RETIRAR PRODUCTO (solo el vendedor )
     const handleRetirarProducto = async (productoId, nombre) => {
         const result = await Swal.fire({
             title: '¿Confirmar Transacción y Retiro?',
@@ -66,7 +66,7 @@ const BandejaMensajes = () => {
 
     // ✅ FUNCIÓN PARA RESPONDER AL MENSAJE
     const handleReply = (mensaje) => {
-        // Determinar quién es el receptor (si soy vendedor, el receptor es el comprador, y viceversa)
+        
         const receptorId = (mensaje.emisor._id === userId)
             ? mensaje.receptor._id  // si yo soy el emisor, respondo al receptor
             : mensaje.emisor._id;   // si yo soy el receptor, respondo al emisor

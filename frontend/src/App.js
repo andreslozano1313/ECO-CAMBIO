@@ -20,21 +20,21 @@ const NOTIFICACIONES_API_URL = 'http://localhost:5000/api/notificaciones';
 
 // Componente que comprueba si hay un token en localStorage
 const checkAuth = () => {
-    return !!localStorage.getItem('userToken');
+    return !!localStorage.getItem('userToken');
 };
 
 const PrivateRoute = ({ children }) => {
-    const isAuthenticated = checkAuth();
-    return isAuthenticated ? children : <Navigate to="/login" />;
+    const isAuthenticated = checkAuth();
+    return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 
 function App() {
-    // ESTADO
-    const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
-    const [notifCount, setNotifCount] = useState(0); 
+    // ESTADO
+    const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
+    const [notifCount, setNotifCount] = useState(0); 
 
-    // Helper para obtener el nombre de usuario del token (simplificado)
+    // Helper para obtener el nombre de usuario del token
     const getUserNameFromToken = () => {
         const token = localStorage.getItem('userToken');
         if (token) {
@@ -49,38 +49,38 @@ function App() {
     };
 
 
-    // FUNCIÓN PARA BUSCAR NOTIFICACIONES PENDIENTES
-    const fetchNotificaciones = useCallback(async () => {
-        const REAL_TOKEN = localStorage.getItem('userToken');
-        if (!REAL_TOKEN) return;
-        try {
-            const config = { headers: { Authorization: `Bearer ${REAL_TOKEN}` } };
-            const response = await axios.get(NOTIFICACIONES_API_URL, config); 
-            setNotifCount(response.data.length);
-        } catch (error) {
-            console.error("Fallo al cargar notificaciones:", error);
-            setNotifCount(0);
-        }
-    }, []);
+    // FUNCIÓN PARA BUSCAR NOTIFICACIONES PENDIENTES
+    const fetchNotificaciones = useCallback(async () => {
+        const REAL_TOKEN = localStorage.getItem('userToken');
+        if (!REAL_TOKEN) return;
+        try {
+            const config = { headers: { Authorization: `Bearer ${REAL_TOKEN}` } };
+            const response = await axios.get(NOTIFICACIONES_API_URL, config); 
+            setNotifCount(response.data.length);
+        } catch (error) {
+            console.error("Fallo al cargar notificaciones:", error);
+            setNotifCount(0);
+        }
+    }, []);
 
-    useEffect(() => {
-        setIsAuthenticated(checkAuth());
-        
-        // Lógica de Notificaciones al iniciar sesión
-        if (checkAuth()) {
-            fetchNotificaciones();
-            // Consulta periódica (cada 30 segundos)
-            const interval = setInterval(fetchNotificaciones, 30000); 
-            return () => clearInterval(interval); // Limpiar al desmontar
-        }
-    }, [fetchNotificaciones]); 
+    useEffect(() => {
+        setIsAuthenticated(checkAuth());
+        
+         // Lógica de Notificaciones al iniciar sesión
+        if (checkAuth()) {
+            fetchNotificaciones();
+            // Consulta periódica (cada 30 segundos)
+            const interval = setInterval(fetchNotificaciones, 30000); 
+            return () => clearInterval(interval); // Limpiar al desmontar
+     }
+     }, [fetchNotificaciones]); 
 
-    // Función para manejar el logout
-    const handleLogout = () => {
-        localStorage.removeItem('userToken');
-        setIsAuthenticated(false);
-        Swal.fire('Sesión Cerrada', 'Has cerrado tu sesión con éxito.', 'info');
-    };
+     // Función para manejar el logout
+    const handleLogout = () => {
+        localStorage.removeItem('userToken');
+        setIsAuthenticated(false);
+        Swal.fire('Sesión Cerrada', 'Has cerrado tu sesión con éxito.', 'info');
+    };
 
     // --- Componente de Barra de Navegación (Navbar) ---
     const Navbar = () => (

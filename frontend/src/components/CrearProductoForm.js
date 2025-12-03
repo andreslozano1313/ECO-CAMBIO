@@ -4,9 +4,6 @@ import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config';
 
-
-// Importa tu logo aquí (Asegúrate de que la ruta sea correcta)
-
 const API_URL = `${API_BASE_URL}/productos`;
 const CATEGORIAS = ['Electrodoméstico', 'Mueble', 'Ropa', 'Electrónica', 'Otros'];
 const ESTADOS = ['Nuevo', 'Usado', 'Para Reutilizar'];
@@ -18,7 +15,7 @@ const CrearProductoForm = () => {
         Categoria: CATEGORIAS[0],
         Descripcion: '',
         Estado: ESTADOS[0],
-        Tipo: 'Venta', // Valor por defecto
+        Tipo: 'Venta', 
         Precio: 0,
         Cantidad_Disponible: 1,
         Ubicacion: '',
@@ -67,7 +64,7 @@ const CrearProductoForm = () => {
             await axios.post(API_URL, data, config);
 
             Swal.fire('¡Publicado!', 'Tu artículo se ha publicado en el Marketplace.', 'success');
-            navigate('/'); // Redirige al Marketplace (que ahora es la ruta raíz)
+            navigate('/'); // Redirige al Marketplace 
 
         } catch (error) {
             console.error('Error al crear producto:', error.response?.data?.message);
@@ -148,7 +145,7 @@ const CrearProductoForm = () => {
     );
 };
 
-// --- Estilos Consistentes con la Autenticación ---
+// Estilos Consistentes con la Autenticación 
 const styles = {
     pageContainer: {
         display: 'flex',

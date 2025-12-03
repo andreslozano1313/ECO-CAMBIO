@@ -1,7 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Reporte = require('../models/Reporte');
 const fs = require('fs'); // <-- NECESARIO: Módulo para eliminar archivos
-// const upload = require('../config/multerConfig'); // No es necesario importarlo aquí
 
 // @desc    Crear un nuevo reporte ciudadano con ubicación
 // @route   POST /api/reportes
@@ -55,19 +54,18 @@ const eliminarReporte = asyncHandler(async (req, res) => {
         throw new Error('Reporte no encontrado.');
     }
 
-    // 1. Verificar la Autoría (Seguridad)
-    // El ID del autor en el reporte (ObjectId) debe coincidir con el ID del usuario logueado (String)
+    // Verificar la Autoría
     if (reporte.autor.toString() !== req.usuario.id) {
         res.status(401);
         throw new Error('Usuario no autorizado para eliminar este reporte.');
     }
 
-    // 2. Eliminar la Imagen del Servidor (si existe)
+    // Eliminar la Imagen del Servidor 
     if (reporte.urlFoto) {
-        // fs.unlink(path) elimina el archivo del disco
+        
         fs.unlink(reporte.urlFoto, (err) => {
             if (err) console.error("Error al eliminar la imagen del reporte:", err);
-            // El reporte se elimina de la DB aunque la imagen falle en el disco.
+            
         });
     }
 
@@ -84,5 +82,5 @@ const eliminarReporte = asyncHandler(async (req, res) => {
 module.exports = {
     crearReporte,
     getReportes,
-    eliminarReporte, // <-- ¡NUEVA FUNCIÓN EXPORTADA!
+    eliminarReporte, 
 };

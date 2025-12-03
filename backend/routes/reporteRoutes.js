@@ -4,7 +4,6 @@ const { crearReporte, getReportes, eliminarReporte } = require('../controllers/r
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../config/multerConfig'); 
 
-// 1. RUTA BASE (sin ID)
 router.route('/')
     .post(
         protect, 

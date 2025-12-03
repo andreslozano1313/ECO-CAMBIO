@@ -60,7 +60,7 @@ const styles = {
         alignItems: 'center',
     },
     icon: {
-        color: 'white', // Ícono blanco para contrastar con la Navbar verde
+        color: 'white', 
     },
     dropdownMenu: {
         position: 'absolute',

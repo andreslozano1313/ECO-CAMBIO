@@ -41,7 +41,7 @@ const ActualizarPerfil = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // 2. Enviar actualización (PUT /api/usuarios/perfil)
+    // Enviar actualización (PUT /api/usuarios/perfil)
     const onSubmit = async (e) => {
         e.preventDefault();
         
@@ -50,7 +50,7 @@ const ActualizarPerfil = () => {
             const payload = {
                 nombres: formData.nombres,
                 email: formData.email,
-                contraseña: formData.contraseña.length > 0 ? formData.contraseña : undefined // Solo enviar si se ingresó algo
+                contraseña: formData.contraseña.length > 0 ? formData.contraseña : undefined 
             };
 
             const response = await axios.put(API_URL, payload, config);
@@ -97,7 +97,7 @@ const styles = {
     label: { textAlign: 'left', marginBottom: '5px', fontSize: '15px', fontWeight: 'bold' },
     input: { marginBottom: '20px', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '16px' },
     button: { padding: '12px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
-    // ... (Asegúrate de copiar los estilos básicos de pageContainer de tus otros formularios)
+    
     pageContainer: {
         display: 'flex',
         justifyContent: 'center',

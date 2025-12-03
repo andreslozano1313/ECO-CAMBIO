@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Producto = require('../models/Producto');
-const Mensaje = require('../models/Mensaje'); // <-- NECESARIO
+const Mensaje = require('../models/Mensaje'); 
 const fs = require('fs');
 
 // @desc    Crear un nuevo producto para venta/donación
@@ -9,15 +9,15 @@ const fs = require('fs');
 const crearProducto = asyncHandler(async (req, res) => {
     const { Nombre_Producto, Categoria, Descripcion, Estado, Tipo, Precio, Cantidad_Disponible, Ubicacion } = req.body;
 
-    // --- CORRECCIÓN CRÍTICA: VALIDACIÓN DE CAMPOS OBLIGATORIOS ---
+    // VALIDACIÓN DE CAMPOS OBLIGATORIOS
     if (!Nombre_Producto || !Categoria || !Descripcion || !Estado || !Tipo || !Ubicacion) {
         res.status(400);
         throw new Error('Faltan campos obligatorios: Nombre, Categoría, Descripción, Estado, Tipo y Ubicación.');
     }
     // -----------------------------------------------------------------
 
-    // --- CORRECCIÓN: VALIDACIÓN DE PRECIO (SÓLO UNA VEZ) ---
-    // También valida que el precio sea válido (no null/undefined) si el tipo es Venta.
+    // VALIDACIÓN DE PRECIO 
+    // También valida que el precio sea válido 
     if (Tipo === 'Venta' && (Precio === undefined || Precio === null || isNaN(Number(Precio)))) {
         res.status(400);
         throw new Error('El precio es obligatorio y debe ser un número válido para productos de Venta.');
@@ -26,7 +26,7 @@ const crearProducto = asyncHandler(async (req, res) => {
     
     const Foto_Producto = req.file ? req.file.path : null; 
     
-    // El resto de la lógica de creación está PERFECTA para la trazabilidad
+    
     const producto = await Producto.create({
         ID_Usuario: req.usuario.id,
         Nombre_Producto,
@@ -52,16 +52,15 @@ const crearProducto = asyncHandler(async (req, res) => {
 // @access  Privado
 const getProductos = asyncHandler(async (req, res) => {
     
-    // 1. CAPTURAR EL PARÁMETRO DE BÚSQUEDA 'q'
+    // 1. CAPTURAR EL PARÁMETRO DE BÚSQUEDA
     const keyword = req.query.q 
         ? { 
-            // Usa una expresión regular para buscar el término en el Nombre_Producto
-            // '$options: "i"' hace que la búsqueda no distinga entre mayúsculas y minúsculas (case insensitive)
+            
             Nombre_Producto: { $regex: req.query.q, $options: 'i' } 
           } 
-        : {}; // Si no hay 'q', el filtro es un objeto vacío
+        : {}; 
 
-    // 2. APLICAR EL FILTRO A MONGO (find({ ...keyword }))
+    // 2. APLICAR EL FILTRO A MONGO
     const productos = await Producto.find({ ...keyword }) // <-- Aplicación del filtro
         .populate('ID_Usuario', 'nombres') 
         .sort({ createdAt: -1 });
@@ -74,7 +73,7 @@ const getProductos = asyncHandler(async (req, res) => {
 // @route   GET /api/productos/:id
 // @access  Privado
 const getProducto = asyncHandler(async (req, res) => { 
-    // Usa req.params.id para obtener el ID de la URL
+    
     const producto = await Producto.findById(req.params.id)
         .populate('ID_Usuario', 'nombres'); 
 
@@ -101,7 +100,7 @@ const eliminarProducto = asyncHandler(async (req, res) => {
         throw new Error('Producto no encontrado.');
     }
 
-    // Seguridad: solo el autor puede eliminar (YA EXISTENTE)
+    // Seguridad: solo el autor puede eliminar 
     if (producto.ID_Usuario.toString() !== req.usuario.id) {
         res.status(401);
         throw new Error('Usuario no autorizado.');
@@ -111,7 +110,7 @@ const eliminarProducto = asyncHandler(async (req, res) => {
     await Mensaje.deleteMany({ producto: req.params.id }); 
     console.log(`Mensajes asociados al producto ${req.params.id} eliminados en cascada.`);
 
-    // 2. Eliminar la Imagen del Servidor (si existe - YA EXISTENTE)
+    // 2. Eliminar la Imagen del Servidor 
     if (producto.Foto_Producto) {
         fs.unlink(producto.Foto_Producto, (err) => {
             if (err) console.error("Error al eliminar la imagen del producto:", err);
@@ -124,10 +123,10 @@ const eliminarProducto = asyncHandler(async (req, res) => {
     res.status(200).json({ id: req.params.id, message: 'Producto y conversaciones eliminados.' });
 });
 
-// --- EXPORTACIÓN FINAL ---
+
 module.exports = {
     crearProducto,
     getProductos,
     eliminarProducto,
-    getProducto, // <--- Ahora está definida y exportada.
+    getProducto, 
 };

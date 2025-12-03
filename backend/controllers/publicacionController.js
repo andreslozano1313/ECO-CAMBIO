@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Publicacion = require('../models/Publicacion');
 const Usuario = require('../models/Usuario'); 
-const fs = require('fs'); // Librería de Node para trabajar con el sistema de archivos
+const fs = require('fs'); 
 const path = require('path');
 
 // @desc    Crear una nueva publicación de acción ecológica
@@ -52,13 +52,13 @@ const getPublicaciones = asyncHandler(async (req, res) => {
     // 1. Capturamos el query de búsqueda, si existe
     const keyword = req.query.q 
         ? {
-              // Si hay búsqueda, busca 'texto' usando una expresión regular (case insensitive)
+              // Si hay búsqueda, busca 'texto' usando una expresión regular
               texto: { $regex: req.query.q, $options: 'i' }, 
           }
         : {}; // Si no hay búsqueda, el filtro es un objeto vacío
 
     // 2. Aplicamos el filtro a .find()
-    const publicaciones = await Publicacion.find({ ...keyword }) // Aplica el filtro (o no aplica nada)
+    const publicaciones = await Publicacion.find({ ...keyword }) // Aplica el filtro
         .populate('autor', 'nombres fotoPerfil')
         .sort({ createdAt: -1 });
 
@@ -77,7 +77,7 @@ const eliminarPublicacion = asyncHandler(async (req, res) => {
     }
 
     // 1. Verificar si el usuario autenticado es el autor de la publicación
-    // req.usuario.id es un string, publicacion.autor es un ObjectId
+    
     if (publicacion.autor.toString() !== req.usuario.id) {
         res.status(401);
         throw new Error('Usuario no autorizado para eliminar esta publicación.');
@@ -85,7 +85,7 @@ const eliminarPublicacion = asyncHandler(async (req, res) => {
 
     // 2. Eliminar la imagen del almacenamiento local (si existe)
     if (publicacion.urlImagen) {
-        // Obtenemos la ruta absoluta del archivo en el servidor
+        
         const filePath = path.join(__dirname, '..', publicacion.urlImagen); 
         fs.unlink(filePath, (err) => {
             if (err) console.error("Error al eliminar la imagen:", err);
@@ -113,35 +113,35 @@ const actualizarPublicacion = asyncHandler(async (req, res) => {
         throw new Error('Publicación no encontrada.');
     }
 
-    // 1. Verificar si el usuario autenticado es el autor
+    // Verificar si el usuario autenticado es el autor
     if (publicacion.autor.toString() !== req.usuario.id) {
         res.status(401);
         throw new Error('Usuario no autorizado para actualizar esta publicación.');
     }
 
-    // 2. Preparar los datos para la actualización
+    // Preparar los datos para la actualización
     let datosActualizados = {
-        texto: req.body.texto || publicacion.texto, // Actualiza el texto si viene en el body
+        texto: req.body.texto || publicacion.texto, 
     };
 
-    // 3. Manejo de la foto: Si se sube un nuevo archivo, reemplazamos el anterior
+    //  Manejo de la foto: Si se sube un nuevo archivo, reemplazamos el anterior
     if (req.file) {
-        // a) Eliminar la imagen antigua del almacenamiento local (si existe)
+        // Eliminar la imagen antigua del almacenamiento local 
         if (publicacion.urlImagen) {
             const filePath = path.join(__dirname, '..', publicacion.urlImagen);
             fs.unlink(filePath, (err) => {
                 if (err) console.error("Error al eliminar la imagen antigua:", err);
             });
         }
-        // b) Asignar la nueva URL de la imagen
+        // Asignar la nueva URL de la imagen
         datosActualizados.urlImagen = req.file.path;
     }
 
-    // 4. Ejecutar la actualización en MongoDB
+    // Ejecutar la actualización en MongoDB
     const publicacionActualizada = await Publicacion.findByIdAndUpdate(
         publicacionId,
         datosActualizados,
-        { new: true, runValidators: true } // {new: true} devuelve el documento actualizado
+        { new: true, runValidators: true } 
     ).populate('autor', 'nombres');
 
     res.status(200).json({

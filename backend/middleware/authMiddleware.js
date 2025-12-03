@@ -5,7 +5,7 @@ const Usuario = require('../models/Usuario');
 const protect = asyncHandler(async (req, res, next) => {
     let token;
 
-    // 1. Verificar si la petición tiene el token en la cabecera (Header)
+    // Verificar si la petición tiene el token en la cabecera (Header)
     if (
         req.headers.authorization &&
         req.headers.authorization.startsWith('Bearer')
@@ -24,7 +24,7 @@ const protect = asyncHandler(async (req, res, next) => {
             next();
         } catch (error) {
             console.error(error);
-            res.status(401); // 401: Unauthorized
+            res.status(401); 
             throw new Error('No autorizado, token fallido o expirado.');
         }
     }

@@ -15,13 +15,12 @@ router.route('/')
     );
 
 // 2. RUTA DE DETALLE Y GESTIÓN (ID)
-// Usamos router.route('/:id') para consolidar las operaciones que reciben un ID
 router.route('/:id')
     .get(protect, getProducto) // GET /api/productos/:id (Detalle)
     .delete(protect, eliminarProducto); // DELETE /api/productos/:id (Eliminar)
 
 
-// 3. RUTAS DE COMENTARIOS (Anidadas)
+// 3. RUTAS DE COMENTARIOS 
 // Estas rutas tienen una sintaxis ligeramente diferente, pero funcionan bien.
 router.route('/:id/comentarios')
     .post(protect, crearComentario) 

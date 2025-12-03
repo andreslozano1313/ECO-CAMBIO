@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const productoSchema = mongoose.Schema(
     {
-        ID_Usuario: { // Referencia al vendedor/donante (FK)
+        ID_Usuario: { // Referencia al vendedor/donante 
             type: mongoose.Schema.Types.ObjectId,
             required: true,
             ref: 'Usuario',
@@ -18,7 +18,7 @@ const productoSchema = mongoose.Schema(
         Categoria: {
             type: String,
             required: true,
-            // Podrías usar un array de strings o un enum para categorías fijas
+            
             enum: ['Electrodoméstico', 'Mueble', 'Ropa', 'Electrónica', 'Otros'], 
         },
         Descripcion: {
@@ -50,7 +50,7 @@ const productoSchema = mongoose.Schema(
         },
     },
     {
-        timestamps: true, // Incluye Fecha_Publicación/createdAt
+        timestamps: true, // Incluye Fecha_Publicación
     }
 );
 

@@ -30,17 +30,17 @@ const Login = ({ setIsAuthenticated }) => {
         try {
             const response = await axios.post(API_URL, formData);
             
-            // 1. Guardar el JWT en el localStorage (Clave del MERN Stack)
+            // Guardar el JWT en el localStorage (Clave del MERN Stack)
             const token = response.data.token;
             localStorage.setItem('userToken', token);
             
-            // 2. Mostrar SweetAlert de éxito
+            // Mostrar SweetAlert de éxito
             Swal.fire('Éxito', `¡Bienvenido, ${response.data.nombres}!`, 'success');
             
-            // 3. Actualizar el estado de autenticación de la App
+            // Actualizar el estado de autenticación de la App
             setIsAuthenticated(true); 
             
-            // 4. Redirigir al feed de publicaciones
+            // Redirigir al feed de publicaciones
             navigate('/'); 
 
         } catch (error) {
@@ -111,7 +111,7 @@ const Login = ({ setIsAuthenticated }) => {
     );
 };
 
-// --- Estilos Actualizados (Simulando el Diseño de la Imagen) ---
+// Estilos Actualizados (Simulando el Diseño de la Imagen)
 const styles = {
     pageContainer: {
         display: 'flex',

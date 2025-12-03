@@ -17,7 +17,7 @@ const transaccionSchema = mongoose.Schema(
             required: true,
             ref: 'Usuario',
         },
-        monto: { // Usamos 'monto' en lugar de 'precio' en la transacción
+        monto: { // Usamos 'monto' 
             type: Number,
             required: true,
         },

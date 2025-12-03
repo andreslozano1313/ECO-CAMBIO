@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const { getPerfil, updatePerfil } = require('../controllers/usuarioController'); // <-- Importar
+const { getPerfil, updatePerfil } = require('../controllers/usuarioController'); 
 
 // Consolidar GET y PUT
 router.route('/perfil')

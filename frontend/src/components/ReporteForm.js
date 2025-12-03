@@ -268,7 +268,7 @@ const styles = {
     },
     button: {
         padding: '15px',
-        backgroundColor: '#f0ad4e', // Color de Alerta/Reporte
+        backgroundColor: '#f0ad4e', 
         color: 'white',
         border: 'none',
         borderRadius: '8px',

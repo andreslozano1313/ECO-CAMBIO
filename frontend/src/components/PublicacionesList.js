@@ -3,7 +3,7 @@ import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Swal from 'sweetalert2'; 
 import styled from 'styled-components';
-import Comentarios from './Comentarios'; // Componente de Comentarios (Importación existente)
+import Comentarios from './Comentarios';
 import API_BASE_URL from '../config';
 
 const API_URL = `${API_BASE_URL}/publicaciones`;
@@ -91,7 +91,7 @@ const PublicacionesList = () => {
         { name: 'Acción Ecológica', selector: row => row.texto, sortable: false, wrap: true },
         { name: 'Puntos', selector: row => row.puntosOtorgados, sortable: true },
         { name: 'Fecha', selector: row => new Date(row.createdAt).toLocaleDateString(), sortable: true },
-        // <-- NUEVA COLUMNA PARA COMENTARIOS (HU 3.2)
+        
         {
             name: 'Interacción',
             cell: row => (
